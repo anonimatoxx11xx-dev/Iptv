@@ -32,7 +32,8 @@ public class MainActivity extends Activity {
     private EditText search, serverInput, portInput, usernameInput, passwordInput;
     private Spinner groups;
     private TextView fileName, stats, resultCount, heroStatus, credentialSummary;
-    private LinearLayout filePanel, iptvPanel, credentialsSummary, loginPanel, appPanel;
+    private LinearLayout filePanel, iptvPanel, credentialsSummary, appPanel;
+    private ScrollView loginPanel;
     private TextView modeFile, modeIptv;
     private ProgressBar loading;
     private Button connectButton;
