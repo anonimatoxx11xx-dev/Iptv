@@ -301,7 +301,7 @@ public class MainActivity extends Activity {
         return c;
     }
 
-    private String normalizeServer(String server, String port) throws Exception {
+    private String normalizeServer(String server, String port) throws MalformedURLException {
         String base=server.trim();
         if(!base.matches("(?i)^https?://.*")) base="http://"+base;
         Uri u=Uri.parse(base);
