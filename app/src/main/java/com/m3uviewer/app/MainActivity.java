@@ -111,7 +111,7 @@ public class MainActivity extends Activity {
         ListView list = findViewById(R.id.channelList);
         adapter = new ChannelAdapter(this, filtered);
         list.setAdapter(adapter);
-        list.setOnItemClickListener((p,v,pos,id) -> show(filtered.get(pos)));
+        list.setOnItemClickListener((p,v,pos,id) -> playChannel(filtered.get(pos)));
     }
 
     private void setupModes() {
@@ -688,6 +688,17 @@ public class MainActivity extends Activity {
     private int favCount(){int n=0;for(Channel c:all)if(fav(c.url))n++;return n;}
     private void toggle(Channel c){
         getPreferences(0).edit().putBoolean("fav_"+Integer.toHexString(c.url.hashCode()),!fav(c.url)).apply(); filter();
+    }
+
+    private void playChannel(Channel c) {
+        if (c == null || c.url == null || c.url.trim().isEmpty()) {
+            Toast.makeText(this, "Stream non disponibile", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent i = new Intent(this, PlayerActivity.class);
+        i.putExtra("url", c.url);
+        i.putExtra("name", c.name);
+        startActivity(i);
     }
 
     private void show(Channel c) {
