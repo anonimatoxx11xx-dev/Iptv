@@ -92,7 +92,11 @@ public class MainActivity extends Activity {
 
         search.addTextChangedListener(new android.text.TextWatcher() {
             public void beforeTextChanged(CharSequence s,int st,int c,int a) {}
-            public void onTextChanged(CharSequence s,int st,int b,int c) {\n                if (pendingFilter != null) searchHandler.removeCallbacks(pendingFilter);\n                pendingFilter = MainActivity.this::filter;\n                searchHandler.postDelayed(pendingFilter, 180);\n            }
+            public void onTextChanged(CharSequence s,int st,int b,int c) {
+                if (pendingFilter != null) searchHandler.removeCallbacks(pendingFilter);
+                pendingFilter = MainActivity.this::filter;
+                searchHandler.postDelayed(pendingFilter, 180);
+            }
             public void afterTextChanged(android.text.Editable e) {}
         });
         groups.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
