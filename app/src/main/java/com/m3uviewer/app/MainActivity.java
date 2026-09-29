@@ -207,6 +207,16 @@ public class MainActivity extends Activity {
     }
 
     private void performIptvConnection(String server, String port, String user, String pass) {
+        // Known provider endpoint for the configured server IP.
+        // Username/password are taken only from the current form fields.
+        if (server.trim().equals("185.160.192.91") && port.trim().isEmpty()) {
+            String directM3u = "http://netherland.warstarlive.com:6923/get.php?username=" + enc(user)
+                    + "&password=" + enc(pass) + "&type=m3u_plus&output=mpegts";
+            runOnUiThread(() -> heroStatus.setText("Server IPTV trovato • caricamento playlist…"));
+            loadM3uFromUrl(directM3u, user, pass);
+            return;
+        }
+
         // If the user pastes a complete Xtream/M3U URL, use it directly.
         if (server.contains("?") && (server.contains("/get.php") || server.contains("/player_api.php"))) {
             try {
