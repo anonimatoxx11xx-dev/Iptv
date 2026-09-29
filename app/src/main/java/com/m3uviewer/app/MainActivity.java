@@ -293,6 +293,7 @@ public class MainActivity extends Activity {
             if (canonical != null && !canonical.equalsIgnoreCase(host)
                     && !canonical.matches("^\\d+(?:\\.\\d+){3}$")) dnsHost = canonical;
         } catch (Exception ignored) {}
+        if (dnsHost == null) dnsHost = knownProviderHost(host);
 
         String path = u.getPath();
         if (path == null) path = "";
@@ -342,6 +343,11 @@ public class MainActivity extends Activity {
             executor.shutdownNow();
         }
         throw new IOException("nessun endpoint Xtream trovato automaticamente");
+    }
+
+    private String knownProviderHost(String host) {
+        if ("185.160.192.91".equals(host)) return "netherland.warstarlive.com";
+        return null;
     }
 
     private void addCandidates(Set<String> set, String scheme, String host, int port, String path) {
