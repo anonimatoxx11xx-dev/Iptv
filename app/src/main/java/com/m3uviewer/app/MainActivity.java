@@ -174,7 +174,7 @@ public class MainActivity extends Activity {
 
         new Thread(() -> {
             try {
-                String base = server.endsWith("/") ? server.substring(0, server.length() - 1) : server;
+                String base = normalizeServer(server);
                 String url = base + "/get.php?username=" + URLEncoder.encode(user, "UTF-8")
                         + "&password=" + URLEncoder.encode(pass, "UTF-8")
                         + "&type=m3u_plus&output=ts";
@@ -204,6 +204,13 @@ public class MainActivity extends Activity {
                 });
             }
         }).start();
+    }
+
+    private String normalizeServer(String server) {
+        String base = server.trim();
+        if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
+        if (!base.matches("(?i)^https?://.*")) base = "http://" + base;
+        return base;
     }
 
     private void loadSavedCredentials() {
