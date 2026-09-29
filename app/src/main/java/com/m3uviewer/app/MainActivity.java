@@ -287,6 +287,12 @@ public class MainActivity extends Activity {
         Uri u = Uri.parse(prepared);
         String host = u.getHost();
         if (host == null || host.isEmpty()) throw new IllegalArgumentException("server non valido");
+        String dnsHost = null;
+        try {
+            String canonical = InetAddress.getByName(host).getCanonicalHostName();
+            if (canonical != null && !canonical.equalsIgnoreCase(host)
+                    && !canonical.matches("^\\d+(?:\\.\\d+){3}$")) dnsHost = canonical;
+        } catch (Exception ignored) {}
 
         String path = u.getPath();
         if (path == null) path = "";
@@ -296,6 +302,14 @@ public class MainActivity extends Activity {
         int[] httpPorts = {80, 8080, 8000, 8880, 6923, 25461, 25460, 25462, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8001, 8081};
         int[] httpsPorts = {443, 8443, 25463, 4433};
         String scheme = u.getScheme() == null ? "" : u.getScheme().toLowerCase(Locale.ROOT);
+        if (dnsHost != null) {
+            if ("https".equals(scheme)) {
+                for (int p : httpsPorts) addCandidates(candidates, "https", dnsHost, p, path);
+            } else {
+                for (int p : httpPorts) addCandidates(candidates, "http", dnsHost, p, path);
+                for (int p : httpsPorts) addCandidates(candidates, "https", dnsHost, p, path);
+            }
+        }
 
         if ("https".equals(scheme)) {
             for (int p : httpsPorts) addCandidates(candidates, "https", host, p, path);
