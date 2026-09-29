@@ -1,26 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="match_parent" android:background="#080A12">
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="#050812">
 
     <androidx.media3.ui.PlayerView
-        android:id="@+id/playerView"
-        android:layout_width="match_parent" android:layout_height="match_parent"
-        android:keepScreenOn="true"
-        android:background="#000000"/>
+        android:id="@+id/playerView" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:keepScreenOn="true" android:background="#000000"
+        android:controllerAutoShow="true" android:showBuffering="when_playing"/>
 
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_gravity="top" android:padding="16dp" android:background="#99080A12"
+        android:layout_gravity="top" android:padding="14dp" android:background="#CC050812"
         android:orientation="vertical">
         <TextView android:id="@+id/playerTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="IPTV VIEWER" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"
+            android:text="IPTV VIEWER" android:textColor="#FFFFFF" android:textSize="17sp" android:textStyle="bold"
             android:maxLines="2"/>
         <TextView android:id="@+id/playerStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="3dp" android:text="Connessione allo stream…"
-            android:textColor="#D9DDF0" android:textSize="12sp"/>
+            android:textColor="#CBD2E8" android:textSize="11sp" android:maxLines="3"/>
     </LinearLayout>
 
-    <Button android:id="@+id/backButton" android:layout_width="48dp" android:layout_height="48dp"
-        android:layout_gravity="top|end" android:layout_margin="14dp"
-        android:text="‹" android:textSize="28sp" android:textColor="#FFFFFF"
-        android:background="@drawable/bg_primary" android:contentDescription="Indietro"/>
+    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="top|end" android:layout_margin="12dp">
+        <Button android:id="@+id/retryButton" android:layout_width="78dp" android:layout_height="42dp"
+            android:text="RIPROVA" android:textSize="10sp" android:textColor="#FFFFFF" android:textAllCaps="false"
+            android:background="@drawable/bg_primary"/>
+        <Button android:id="@+id/backButton" android:layout_width="48dp" android:layout_height="42dp" android:layout_marginStart="6dp"
+            android:text="‹" android:textSize="25sp" android:textColor="#FFFFFF"
+            android:background="@drawable/bg_primary" android:contentDescription="Indietro"/>
+    </LinearLayout>
+
+    <Button android:id="@+id/externalButton" android:layout_width="wrap_content" android:layout_height="42dp"
+        android:layout_gravity="bottom|end" android:layout_margin="14dp"
+        android:text="Player esterno" android:textSize="10sp" android:textAllCaps="false"
+        android:textColor="#FFFFFF" android:background="@drawable/bg_primary"/>
 </FrameLayout>
