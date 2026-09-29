@@ -406,7 +406,7 @@ public class MainActivity extends Activity {
             c = open(m3uUrl, DISCOVERY_CONNECT_TIMEOUT_MS, DISCOVERY_READ_TIMEOUT_MS);
             int code = c.getResponseCode();
             if (code >= 200 && code < 300) {
-                String body = readLimited(c.getInputStream(), 256_000).trim();
+                String body = readPrefix(c.getInputStream(), 65536).trim();
                 return body.contains("#EXTM3U") || body.contains("#EXTINF");
             }
         } finally {
@@ -519,6 +519,24 @@ public class MainActivity extends Activity {
         return scheme + "://" + host + path;
     }
     private String enc(String s) { try{return URLEncoder.encode(s,"UTF-8");}catch(Exception e){return s;} }
+
+    private String readPrefix(InputStream in, int maxBytes) throws Exception {
+        try (InputStream raw = in; BufferedInputStream bin = new BufferedInputStream(raw);
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            byte[] buf = new byte[8192];
+            int total = 0;
+            while (total < maxBytes) {
+                int want = Math.min(buf.length, maxBytes - total);
+                int n = bin.read(buf, 0, want);
+                if (n == -1) break;
+                out.write(buf, 0, n);
+                total += n;
+                String s = out.toString(StandardCharsets.UTF_8.name());
+                if (s.contains("#EXTM3U") || s.contains("#EXTINF")) return s;
+            }
+            return out.toString(StandardCharsets.UTF_8.name());
+        }
+    }
 
     private String readLimited(InputStream in, int maxBytes) throws Exception {
         try(InputStream raw=in; BufferedInputStream bin=new BufferedInputStream(raw);
