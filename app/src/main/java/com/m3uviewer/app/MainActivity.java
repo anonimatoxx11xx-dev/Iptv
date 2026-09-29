@@ -830,6 +830,7 @@ public class MainActivity extends Activity {
             credentialSummary.setText(base + "\nUtente: " + user + " • Password: ••••••••");
             setupGroups(); filter();
             connectButton.setEnabled(true);
+            enterApp("Account collegato • " + all.size() + " canali • " + source);
             Toast.makeText(this, "Playlist caricata", Toast.LENGTH_SHORT).show();
         });
     }
