@@ -277,35 +277,47 @@ public class MainActivity extends Activity {
         LinkedHashSet<String> candidates = new LinkedHashSet<>();
         String scheme = u.getScheme() == null ? "" : u.getScheme().toLowerCase(Locale.ROOT);
 
+        int[] httpPorts = {80, 25461, 8080, 8000, 8880, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8001, 8081, 25460, 25462};
+        int[] httpsPorts = {443, 8443, 25463, 4433};
+
         if ("https".equals(scheme)) {
-            addCandidate(candidates, "https", host, 443, path);
-            addCandidate(candidates, "https", host, 25463, path);
-            addCandidate(candidates, "https", host, 8443, path);
+            for (int p : httpsPorts) addCandidate(candidates, "https", host, p, path);
+        } else if ("http".equals(scheme)) {
+            for (int p : httpPorts) addCandidate(candidates, "http", host, p, path);
+            for (int p : httpsPorts) addCandidate(candidates, "https", host, p, path);
         } else {
-            addCandidate(candidates, "http", host, 80, path);
-            addCandidate(candidates, "http", host, 25461, path);
-            addCandidate(candidates, "http", host, 8080, path);
-            addCandidate(candidates, "http", host, 8000, path);
-            addCandidate(candidates, "http", host, 2052, path);
-            addCandidate(candidates, "http", host, 2082, path);
-            addCandidate(candidates, "http", host, 2086, path);
-            addCandidate(candidates, "http", host, 2095, path);
-            addCandidate(candidates, "http", host, 8880, path);
-            addCandidate(candidates, "https", host, 443, path);
-            addCandidate(candidates, "https", host, 25463, path);
-            addCandidate(candidates, "https", host, 8443, path);
+            for (int p : httpPorts) addCandidate(candidates, "http", host, p, path);
+            for (int p : httpsPorts) addCandidate(candidates, "https", host, p, path);
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(Math.min(8, candidates.size()));
+        CompletionService<String> completion = new ExecutorCompletionService<>(executor);
+        int submitted = 0;
+        for (String candidate : candidates) {
+            final String base = candidate;
+            completion.submit(() -> probeXtream(base, user, pass) ? base : null);
+            submitted++;
         }
 
         Exception last = null;
-        for (String base : candidates) {
-            try {
-                if (probeXtream(base, user, pass)) return base;
-            } catch (Exception e) {
-                last = e;
+        try {
+            for (int i = 0; i < submitted; i++) {
+                try {
+                    String found = completion.take().get();
+                    if (found != null) {
+                        executor.shutdownNow();
+                        return found;
+                    }
+                } catch (ExecutionException e) {
+                    Throwable cause = e.getCause();
+                    if (cause instanceof Exception) last = (Exception) cause;
+                }
             }
+        } finally {
+            executor.shutdownNow();
         }
-        throw new IOException("nessuna porta Xtream trovata (provate " + candidates.size() + " configurazioni)" +
-            (last == null ? "" : ": " + cleanError(last)));
+
+        throw new IOException("nessun endpoint Xtream trovato automaticamente");
     }
 
     private void addCandidate(Set<String> set, String scheme, String host, int port, String path) {
@@ -331,13 +343,17 @@ public class MainActivity extends Activity {
             c = open(url, DISCOVERY_CONNECT_TIMEOUT_MS, DISCOVERY_READ_TIMEOUT_MS);
             int code = c.getResponseCode();
             if (code < 200 || code >= 500) throw new IOException("HTTP " + code);
-            String body = readLimited(c.getInputStream(), 512_000);
-            JSONObject root = new JSONObject(body);
-            return root.has("user_info") || root.has("server_info");
+            String body = readLimited(c.getInputStream(), 512_000).trim();
+            if (body.startsWith("{")) {
+                JSONObject root = new JSONObject(body);
+                return root.has("user_info") || root.has("server_info");
+            }
+            return false;
         } finally {
             if (c != null) c.disconnect();
         }
     }
+
     private PlayerResult tryXtreamApi(String base, String user, String pass) throws Exception {
         String authUrl = base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass);
         HttpURLConnection auth = open(authUrl);
@@ -397,7 +413,7 @@ public class MainActivity extends Activity {
         c.setInstanceFollowRedirects(true);
         c.setRequestProperty("User-Agent","IPTV Viewer/2.0");
         c.setRequestProperty("Accept","*/*");
-        c.setRequestProperty("Accept-Encoding","gzip");
+        c.setRequestProperty("Connection","close");
         return c;
     }
 
