@@ -58,7 +58,7 @@ public class PlayerActivity extends Activity {
 
             @Override public void onPlayerError(PlaybackException error) {
                 String detail = error.getMessage();
-                if (detail == null || detail.isEmpty()) detail = error.errorCodeName;
+                if (detail == null || detail.isEmpty()) detail = "Codice " + error.errorCode;
                 status.setText("Errore stream: " + detail);
             }
         });
