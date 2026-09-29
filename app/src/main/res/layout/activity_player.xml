@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="#080A12">
+
+    <androidx.media3.ui.PlayerView
+        android:id="@+id/playerView"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:keepScreenOn="true"
+        android:background="#000000"/>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_gravity="top" android:padding="16dp" android:background="#99080A12"
+        android:orientation="vertical">
+        <TextView android:id="@+id/playerTitle" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="IPTV VIEWER" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold"
+            android:maxLines="2"/>
+        <TextView android:id="@+id/playerStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_marginTop="3dp" android:text="Connessione allo stream…"
+            android:textColor="#D9DDF0" android:textSize="12sp"/>
+    </LinearLayout>
+
+    <Button android:id="@+id/backButton" android:layout_width="48dp" android:layout_height="48dp"
+        android:layout_gravity="top|end" android:layout_margin="14dp"
+        android:text="‹" android:textSize="28sp" android:textColor="#FFFFFF"
+        android:background="@drawable/bg_primary" android:contentDescription="Indietro"/>
+</FrameLayout>
