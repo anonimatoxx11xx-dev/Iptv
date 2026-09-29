@@ -287,19 +287,23 @@ public class MainActivity extends Activity {
         Uri u = Uri.parse(prepared);
         String host = u.getHost();
         if (host == null || host.isEmpty()) throw new IllegalArgumentException("server non valido");
-        String dnsHost = null;
-        try {
-            String canonical = InetAddress.getByName(host).getCanonicalHostName();
-            if (canonical != null && !canonical.equalsIgnoreCase(host)
-                    && !canonical.matches("^\\d+(?:\\.\\d+){3}$")) dnsHost = canonical;
-        } catch (Exception ignored) {}
-        if (dnsHost == null) dnsHost = knownProviderHost(host);
+        String dnsHost = knownProviderHost(host);
+        if (dnsHost == null) {
+            try {
+                String canonical = InetAddress.getByName(host).getCanonicalHostName();
+                if (canonical != null && !canonical.equalsIgnoreCase(host)
+                        && !canonical.matches("^\\d+(?:\\.\\d+){3}$")) dnsHost = canonical;
+            } catch (Exception ignored) {}
+        }
 
         String path = u.getPath();
         if (path == null) path = "";
         while (path.endsWith("/") && !path.isEmpty()) path = path.substring(0, path.length() - 1);
 
         LinkedHashSet<String> candidates = new LinkedHashSet<>();
+        if (knownProviderHost(host) != null) {
+            addCandidates(candidates, "http", knownProviderHost(host), 6923, path);
+        }
         int[] httpPorts = {80, 8080, 8000, 8880, 6923, 25461, 25460, 25462, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8001, 8081};
         int[] httpsPorts = {443, 8443, 25463, 4433};
         String scheme = u.getScheme() == null ? "" : u.getScheme().toLowerCase(Locale.ROOT);
