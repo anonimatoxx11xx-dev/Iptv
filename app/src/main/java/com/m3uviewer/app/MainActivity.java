@@ -255,7 +255,7 @@ public class MainActivity extends Activity {
         }
 
         try {
-            String m3uUrl = base + "/get.php?username=" + enc(user) + "&password=" + enc(pass) + "&type=m3u_plus&output=ts";
+            String m3uUrl = base + "/get.php?username=" + enc(user) + "&password=" + enc(pass) + "&type=m3u_plus&output=mpegts";
             HttpURLConnection c = open(m3uUrl);
             int code = c.getResponseCode();
             if (code < 200 || code >= 300) throw new IOException("HTTP " + code);
@@ -400,7 +400,7 @@ public class MainActivity extends Activity {
             if (c != null) c.disconnect();
         }
 
-        String m3uUrl = apiBase + "/get.php?username=" + enc(user) + "&password=" + enc(pass) + "&type=m3u_plus&output=ts";
+        String m3uUrl = apiBase + "/get.php?username=" + enc(user) + "&password=" + enc(pass) + "&type=m3u_plus&output=mpegts";
         c = null;
         try {
             c = open(m3uUrl, DISCOVERY_CONNECT_TIMEOUT_MS, DISCOVERY_READ_TIMEOUT_MS);
