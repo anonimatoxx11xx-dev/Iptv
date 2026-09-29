@@ -308,7 +308,7 @@ public class MainActivity extends Activity {
         String scheme=u.getScheme();
         if(scheme==null) throw new IllegalArgumentException("server non valido");
         String host=u.getHost();
-        if(host==null||host.isEmpty()) throw new MalformedURLException("server non valido");
+        if(host==null||host.isEmpty()) throw new IllegalArgumentException("server non valido");
         if(!port.isEmpty() && u.getPort()==-1) {
             base=scheme+"://"+host+":"+port+(u.getPath()==null?"":u.getPath());
         }
