@@ -352,10 +352,26 @@ public class MainActivity extends Activity {
         // Known provider endpoint for the configured server IP.
         // Username/password are taken only from the current form fields.
         if (server.trim().equals("185.160.192.91") && port.trim().isEmpty()) {
-            String directM3u = "http://netherland.warstarlive.com:6923/get.php?username=" + enc(user)
-                    + "&password=" + enc(pass) + "&type=m3u_plus&output=mpegts";
-            runOnUiThread(() -> heroStatus.setText("Server IPTV trovato • caricamento playlist…"));
-            loadM3uFromUrl(directM3u, user, pass);
+            final String providerBase = "http://netherland.warstarlive.com:6923";
+            runOnUiThread(() -> heroStatus.setText("Server IPTV trovato • accesso Xtream…"));
+            new Thread(() -> {
+                try {
+                    PlayerResult api = tryXtreamLiveOnly(providerBase, user, pass);
+                    if (api.channels.isEmpty()) throw new IOException("nessun canale Live restituito dal server");
+                    finishConnection(api.channels, providerBase, user, "Xtream Live");
+                } catch (Exception e) {
+                    runOnUiThread(() -> {
+                        setLoading(false);
+                        connectButton.setEnabled(true);
+                        heroStatus.setText("Connessione non riuscita");
+                        new android.app.AlertDialog.Builder(this)
+                                .setTitle("Connessione IPTV non riuscita")
+                                .setMessage("Il server risponde, ma il caricamento Live non è riuscito.\\n\\n" + cleanError(e))
+                                .setPositiveButton("OK", null)
+                                .show();
+                    });
+                }
+            }, "iptv-known-provider").start();
             return;
         }
 
@@ -610,6 +626,48 @@ public class MainActivity extends Activity {
                 if (c != null) c.disconnect();
             }
         }, "iptv-m3u").start();
+    }
+
+    private PlayerResult tryXtreamLiveOnly(String base, String user, String pass) throws Exception {
+        String authUrl = base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass);
+        HttpURLConnection auth = open(authUrl);
+        int code = auth.getResponseCode();
+        if (code < 200 || code >= 300) throw new IOException("HTTP " + code);
+        String body = readLimited(auth.getInputStream(), 2_000_000);
+        auth.disconnect();
+
+        JSONObject root = new JSONObject(body);
+        JSONObject ui = root.optJSONObject("user_info");
+        if (ui != null) {
+            String status = ui.optString("status", "");
+            if ("Disabled".equalsIgnoreCase(status) || "Expired".equalsIgnoreCase(status))
+                throw new IOException("account IPTV non attivo");
+        }
+
+        JSONArray cats = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
+                + "&password=" + enc(pass) + "&action=get_live_categories");
+        Map<String,String> categoryMap = new HashMap<>();
+        for (int i=0;i<cats.length();i++) {
+            JSONObject o=cats.optJSONObject(i);
+            if(o!=null) categoryMap.put(o.optString("category_id",""), o.optString("category_name","Senza gruppo"));
+        }
+
+        JSONArray streams = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
+                + "&password=" + enc(pass) + "&action=get_live_streams");
+        List<Channel> channels = new ArrayList<>();
+        for(int i=0;i<streams.length();i++){
+            JSONObject o=streams.optJSONObject(i);
+            if(o==null) continue;
+            String id=o.optString("stream_id","");
+            if(id.isEmpty()) continue;
+            String n=o.optString("name","Canale senza nome");
+            String cat=categoryMap.get(o.optString("category_id",""));
+            if(cat==null||cat.isEmpty()) cat="Senza gruppo";
+            String logo=o.optString("stream_icon","");
+            String streamUrl=base+"/live/"+enc(user)+"/"+enc(pass)+"/"+id+".m3u8";
+            channels.add(new Channel(n,streamUrl,cat,id,logo,ContentType.LIVE,id,""));
+        }
+        return new PlayerResult(channels);
     }
 
     private PlayerResult tryXtreamApi(String base, String user, String pass) throws Exception {
