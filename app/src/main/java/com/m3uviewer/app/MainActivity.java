@@ -207,6 +207,24 @@ public class MainActivity extends Activity {
     }
 
     private void performIptvConnection(String server, String port, String user, String pass) {
+        // If the user pastes a complete Xtream/M3U URL, use it directly.
+        if (server.contains("?") && (server.contains("/get.php") || server.contains("/player_api.php"))) {
+            try {
+                String directUrl = server.trim();
+                Uri parsed = Uri.parse(directUrl);
+                String directUser = parsed.getQueryParameter("username");
+                String directPass = parsed.getQueryParameter("password");
+                if (directUser != null && directPass != null) {
+                    String directBase = parsed.getScheme() + "://" + parsed.getAuthority();
+                    String m3u = directUrl;
+                    final String shownBase = directBase;
+                    runOnUiThread(() -> heroStatus.setText("Server trovato: " + shownBase + " • caricamento playlist…"));
+                    loadM3uFromUrl(m3u, directUser, directPass);
+                    return;
+                }
+            } catch (Exception ignored) {
+            }
+        }
         String base;
         Exception first = null;
         try {
@@ -275,7 +293,7 @@ public class MainActivity extends Activity {
         while (path.endsWith("/") && !path.isEmpty()) path = path.substring(0, path.length() - 1);
 
         LinkedHashSet<String> candidates = new LinkedHashSet<>();
-        int[] httpPorts = {80, 8080, 8000, 8880, 25461, 25460, 25462, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8001, 8081};
+        int[] httpPorts = {80, 8080, 8000, 8880, 6923, 25461, 25460, 25462, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8001, 8081};
         int[] httpsPorts = {443, 8443, 25463, 4433};
         String scheme = u.getScheme() == null ? "" : u.getScheme().toLowerCase(Locale.ROOT);
 
@@ -376,6 +394,46 @@ public class MainActivity extends Activity {
         }
         return false;
     }
+    private void loadM3uFromUrl(String url, String user, String pass) {
+        new Thread(() -> {
+            HttpURLConnection c = null;
+            try {
+                c = open(url);
+                int code = c.getResponseCode();
+                if (code < 200 || code >= 300) throw new IOException("HTTP " + code);
+                String text = readLimited(c.getInputStream(), 8_000_000);
+                List<Channel> parsed = parseM3u(text);
+                runOnUiThread(() -> {
+                    setLoading(false);
+                    if (parsed.isEmpty()) {
+                        heroStatus.setText("Playlist vuota");
+                        new android.app.AlertDialog.Builder(this)
+                            .setTitle("Playlist non caricata")
+                            .setMessage("Il server ha risposto, ma non è stata trovata una playlist M3U valida.")
+                            .setPositiveButton("OK", null).show();
+                        return;
+                    }
+                    channels.clear();
+                    channels.addAll(parsed);
+                    rebuildGroups();
+                    updateList();
+                    heroStatus.setText("Xtream collegato • " + parsed.size() + " canali");
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    setLoading(false);
+                    heroStatus.setText("Errore caricamento playlist");
+                    new android.app.AlertDialog.Builder(this)
+                        .setTitle("Errore playlist")
+                        .setMessage(cleanError(e))
+                        .setPositiveButton("OK", null).show();
+                });
+            } finally {
+                if (c != null) c.disconnect();
+            }
+        }).start();
+    }
+
     private PlayerResult tryXtreamApi(String base, String user, String pass) throws Exception {
         String authUrl = base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass);
         HttpURLConnection auth = open(authUrl);
