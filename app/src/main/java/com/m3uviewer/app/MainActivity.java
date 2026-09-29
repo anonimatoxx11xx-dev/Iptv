@@ -14,11 +14,14 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.*;
+import java.util.concurrent.*;
 
 public class MainActivity extends Activity {
     private static final int PICK_FILE = 401;
     private static final int CONNECT_TIMEOUT_MS = 15000;
     private static final int READ_TIMEOUT_MS = 45000;
+    private static final int DISCOVERY_CONNECT_TIMEOUT_MS = 2500;
+    private static final int DISCOVERY_READ_TIMEOUT_MS = 5000;
     private final List<Channel> all = new ArrayList<>();
     private final List<Channel> filtered = new ArrayList<>();
     private ChannelAdapter adapter;
@@ -204,8 +207,24 @@ public class MainActivity extends Activity {
     }
 
     private void performIptvConnection(String server, String port, String user, String pass) {
-        String base = normalizeServer(server, port);
+        String base;
         Exception first = null;
+        try {
+            base = discoverOrNormalizeServer(server, port, user, pass);
+            final String foundBase = base;
+            runOnUiThread(() -> heroStatus.setText("Server trovato: " + foundBase + " • accesso Xtream…"));
+        } catch (Exception discoveryError) {
+            runOnUiThread(() -> {
+                setLoading(false);
+                heroStatus.setText("Server IPTV non trovato");
+                new android.app.AlertDialog.Builder(this)
+                    .setTitle("Server IPTV non trovato")
+                    .setMessage("Non è stato trovato automaticamente un endpoint Xtream Codes sul server indicato.\\n\\n" + cleanError(discoveryError) + "\\n\\nPuoi indicare la porta manualmente se il provider usa una porta personalizzata.")
+                    .setPositiveButton("OK", null)
+                    .show();
+            });
+            return;
+        }
         try {
             PlayerResult api = tryXtreamApi(base, user, pass);
             if (!api.channels.isEmpty()) {
@@ -242,6 +261,83 @@ public class MainActivity extends Activity {
         }
     }
 
+    private String discoverOrNormalizeServer(String server, String port, String user, String pass) throws Exception {
+        String raw = server.trim();
+        if (!port.isEmpty() || hasExplicitPort(raw)) return normalizeServer(raw, port);
+
+        String prepared = raw.matches("(?i)^https?://.*") ? raw : "http://" + raw;
+        Uri u = Uri.parse(prepared);
+        String host = u.getHost();
+        if (host == null || host.isEmpty()) throw new IllegalArgumentException("server non valido");
+
+        String path = u.getPath();
+        if (path == null) path = "";
+        while (path.endsWith("/") && !path.isEmpty()) path = path.substring(0, path.length() - 1);
+
+        LinkedHashSet<String> candidates = new LinkedHashSet<>();
+        String scheme = u.getScheme() == null ? "" : u.getScheme().toLowerCase(Locale.ROOT);
+
+        if ("https".equals(scheme)) {
+            addCandidate(candidates, "https", host, 443, path);
+            addCandidate(candidates, "https", host, 25463, path);
+            addCandidate(candidates, "https", host, 8443, path);
+        } else {
+            addCandidate(candidates, "http", host, 80, path);
+            addCandidate(candidates, "http", host, 25461, path);
+            addCandidate(candidates, "http", host, 8080, path);
+            addCandidate(candidates, "http", host, 8000, path);
+            addCandidate(candidates, "http", host, 2052, path);
+            addCandidate(candidates, "http", host, 2082, path);
+            addCandidate(candidates, "http", host, 2086, path);
+            addCandidate(candidates, "http", host, 2095, path);
+            addCandidate(candidates, "http", host, 8880, path);
+            addCandidate(candidates, "https", host, 443, path);
+            addCandidate(candidates, "https", host, 25463, path);
+            addCandidate(candidates, "https", host, 8443, path);
+        }
+
+        Exception last = null;
+        for (String base : candidates) {
+            try {
+                if (probeXtream(base, user, pass)) return base;
+            } catch (Exception e) {
+                last = e;
+            }
+        }
+        throw new IOException("nessuna porta Xtream trovata (provate " + candidates.size() + " configurazioni)" +
+            (last == null ? "" : ": " + cleanError(last)));
+    }
+
+    private void addCandidate(Set<String> set, String scheme, String host, int port, String path) {
+        String h = host;
+        if (h.contains(":") && !h.startsWith("[")) h = "[" + h + "]";
+        set.add(scheme + "://" + h + ":" + port + path);
+    }
+
+    private boolean hasExplicitPort(String server) {
+        try {
+            String s = server.matches("(?i)^https?://.*") ? server : "http://" + server;
+            Uri u = Uri.parse(s);
+            return u.getPort() != -1;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean probeXtream(String base, String user, String pass) throws Exception {
+        String url = base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass);
+        HttpURLConnection c = null;
+        try {
+            c = open(url, DISCOVERY_CONNECT_TIMEOUT_MS, DISCOVERY_READ_TIMEOUT_MS);
+            int code = c.getResponseCode();
+            if (code < 200 || code >= 500) throw new IOException("HTTP " + code);
+            String body = readLimited(c.getInputStream(), 512_000);
+            JSONObject root = new JSONObject(body);
+            return root.has("user_info") || root.has("server_info");
+        } finally {
+            if (c != null) c.disconnect();
+        }
+    }
     private PlayerResult tryXtreamApi(String base, String user, String pass) throws Exception {
         String authUrl = base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass);
         HttpURLConnection auth = open(authUrl);
@@ -291,9 +387,13 @@ public class MainActivity extends Activity {
     }
 
     private HttpURLConnection open(String url) throws Exception {
+        return open(url, CONNECT_TIMEOUT_MS, READ_TIMEOUT_MS);
+    }
+
+    private HttpURLConnection open(String url, int connectTimeout, int readTimeout) throws Exception {
         HttpURLConnection c=(HttpURLConnection)new URL(url).openConnection();
-        c.setConnectTimeout(CONNECT_TIMEOUT_MS);
-        c.setReadTimeout(READ_TIMEOUT_MS);
+        c.setConnectTimeout(connectTimeout);
+        c.setReadTimeout(readTimeout);
         c.setInstanceFollowRedirects(true);
         c.setRequestProperty("User-Agent","IPTV Viewer/2.0");
         c.setRequestProperty("Accept","*/*");
