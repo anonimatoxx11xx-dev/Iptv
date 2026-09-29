@@ -22,6 +22,10 @@ public class MainActivity extends Activity {
     private static final int READ_TIMEOUT_MS = 45000;
     private static final int DISCOVERY_CONNECT_TIMEOUT_MS = 2500;
     private static final int DISCOVERY_READ_TIMEOUT_MS = 5000;
+    private static final int DISPLAY_LIMIT = 500;
+    private int matchingCount = 0;
+    private final android.os.Handler searchHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private Runnable pendingFilter;
     private final List<Channel> all = new ArrayList<>();
     private final List<Channel> filtered = new ArrayList<>();
     private ChannelAdapter adapter;
@@ -88,7 +92,7 @@ public class MainActivity extends Activity {
 
         search.addTextChangedListener(new android.text.TextWatcher() {
             public void beforeTextChanged(CharSequence s,int st,int c,int a) {}
-            public void onTextChanged(CharSequence s,int st,int b,int c) { filter(); }
+            public void onTextChanged(CharSequence s,int st,int b,int c) {\n                if (pendingFilter != null) searchHandler.removeCallbacks(pendingFilter);\n                pendingFilter = MainActivity.this::filter;\n                searchHandler.postDelayed(pendingFilter, 180);\n            }
             public void afterTextChanged(android.text.Editable e) {}
         });
         groups.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -661,14 +665,18 @@ public class MainActivity extends Activity {
     private void filter() {
         String q=search.getText().toString().trim().toLowerCase(Locale.ROOT);
         filtered.clear();
+        matchingCount=0;
         for(Channel c:all){
             boolean groupOk="Tutti".equals(selected)||c.group.equals(selected);
             boolean textOk=q.isEmpty()||c.name.toLowerCase(Locale.ROOT).contains(q)
                 ||c.group.toLowerCase(Locale.ROOT).contains(q)||c.id.toLowerCase(Locale.ROOT).contains(q);
-            if(groupOk&&textOk) filtered.add(c);
+            if(groupOk&&textOk){
+                matchingCount++;
+                if(filtered.size()<DISPLAY_LIMIT) filtered.add(c);
+            }
         }
         adapter.notifyDataSetChanged();
-        resultCount.setText(String.valueOf(filtered.size()));
+        resultCount.setText(matchingCount>DISPLAY_LIMIT ? DISPLAY_LIMIT+"+" : String.valueOf(matchingCount));
         stats.setText(all.size()+" canali • "+favCount()+" preferiti");
     }
 
