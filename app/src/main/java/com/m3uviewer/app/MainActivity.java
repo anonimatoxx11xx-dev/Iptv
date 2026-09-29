@@ -401,27 +401,15 @@ public class MainActivity extends Activity {
                 c = open(url);
                 int code = c.getResponseCode();
                 if (code < 200 || code >= 300) throw new IOException("HTTP " + code);
-                String text = readLimited(c.getInputStream(), 8_000_000);
-                List<Channel> parsed = parseM3u(text);
-                runOnUiThread(() -> {
-                    setLoading(false);
-                    if (parsed.isEmpty()) {
-                        heroStatus.setText("Playlist vuota");
-                        new android.app.AlertDialog.Builder(this)
-                            .setTitle("Playlist non caricata")
-                            .setMessage("Il server ha risposto, ma non è stata trovata una playlist M3U valida.")
-                            .setPositiveButton("OK", null).show();
-                        return;
-                    }
-                    channels.clear();
-                    channels.addAll(parsed);
-                    rebuildGroups();
-                    updateList();
-                    heroStatus.setText("Xtream collegato • " + parsed.size() + " canali");
-                });
+                List<Channel> parsed = parseStream(c.getInputStream());
+                if (parsed.isEmpty()) throw new IOException("playlist M3U vuota");
+                Uri u = Uri.parse(url);
+                String base = u.getScheme() + "://" + u.getAuthority();
+                finishConnection(parsed, base, user, "M3U Xtream");
             } catch (Exception e) {
                 runOnUiThread(() -> {
                     setLoading(false);
+                    connectButton.setEnabled(true);
                     heroStatus.setText("Errore caricamento playlist");
                     new android.app.AlertDialog.Builder(this)
                         .setTitle("Errore playlist")
@@ -431,7 +419,7 @@ public class MainActivity extends Activity {
             } finally {
                 if (c != null) c.disconnect();
             }
-        }).start();
+        }, "iptv-m3u").start();
     }
 
     private PlayerResult tryXtreamApi(String base, String user, String pass) throws Exception {
