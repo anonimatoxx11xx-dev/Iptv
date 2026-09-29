@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.*;
 
-public class MainActivity {
+public class MainActivity extends Activity {
     private static final int PICK_FILE=401;
     private final List<Channel> all=new ArrayList<>(), filtered=new ArrayList<>();
     private ChannelAdapter adapter; private EditText search; private Spinner groups;
