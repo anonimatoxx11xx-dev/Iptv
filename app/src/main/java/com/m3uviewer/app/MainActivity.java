@@ -219,7 +219,7 @@ public class MainActivity extends Activity {
                 heroStatus.setText("Server IPTV non trovato");
                 new android.app.AlertDialog.Builder(this)
                     .setTitle("Server IPTV non trovato")
-                    .setMessage("Non è stato trovato automaticamente un endpoint Xtream Codes sul server indicato.\\n\\n" + cleanError(discoveryError) + "\\n\\nPuoi indicare la porta manualmente se il provider usa una porta personalizzata.")
+                    .setMessage("Non è stato trovato automaticamente un servizio Xtream sul server indicato.\n\n" + cleanError(discoveryError) + "\n\nL’app ha provato automaticamente le configurazioni Xtream supportate.")
                     .setPositiveButton("OK", null)
                     .show();
             });
@@ -337,21 +337,36 @@ public class MainActivity extends Activity {
     }
 
     private boolean probeXtream(String base, String user, String pass) throws Exception {
-        String url = base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass);
+        String apiUrl = base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass);
         HttpURLConnection c = null;
         try {
-            c = open(url, DISCOVERY_CONNECT_TIMEOUT_MS, DISCOVERY_READ_TIMEOUT_MS);
+            c = open(apiUrl, DISCOVERY_CONNECT_TIMEOUT_MS, DISCOVERY_READ_TIMEOUT_MS);
             int code = c.getResponseCode();
-            if (code < 200 || code >= 500) throw new IOException("HTTP " + code);
-            String body = readLimited(c.getInputStream(), 512_000).trim();
-            if (body.startsWith("{")) {
-                JSONObject root = new JSONObject(body);
-                return root.has("user_info") || root.has("server_info");
+            if (code >= 200 && code < 300) {
+                String body = readLimited(c.getInputStream(), 512_000).trim();
+                if (body.startsWith("{")) {
+                    JSONObject root = new JSONObject(body);
+                    if (root.has("user_info") || root.has("server_info")) return true;
+                }
             }
-            return false;
+        } catch (Exception ignored) {
         } finally {
             if (c != null) c.disconnect();
         }
+
+        String m3uUrl = base + "/get.php?username=" + enc(user) + "&password=" + enc(pass) + "&type=m3u_plus&output=ts";
+        c = null;
+        try {
+            c = open(m3uUrl, DISCOVERY_CONNECT_TIMEOUT_MS, DISCOVERY_READ_TIMEOUT_MS);
+            int code = c.getResponseCode();
+            if (code >= 200 && code < 300) {
+                String body = readLimited(c.getInputStream(), 256_000).trim();
+                return body.contains("#EXTM3U") || body.contains("#EXTINF");
+            }
+        } finally {
+            if (c != null) c.disconnect();
+        }
+        return false;
     }
 
     private PlayerResult tryXtreamApi(String base, String user, String pass) throws Exception {
