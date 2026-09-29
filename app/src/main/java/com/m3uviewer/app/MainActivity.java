@@ -616,7 +616,7 @@ public class MainActivity extends Activity {
             String cat=categoryMap.get(o.optString("category_id",""));
             if(cat==null||cat.isEmpty()) cat="Senza gruppo";
             String logo=o.optString("stream_icon","");
-            String streamUrl=base+"/live/"+enc(user)+"/"+enc(pass)+"/"+id+".ts";
+            String streamUrl=base+"/live/"+enc(user)+"/"+enc(pass)+"/"+id+".m3u8";
             channels.add(new Channel(n,streamUrl,cat,id,logo,ContentType.LIVE,id,""));
         }
         // VOD / Film
