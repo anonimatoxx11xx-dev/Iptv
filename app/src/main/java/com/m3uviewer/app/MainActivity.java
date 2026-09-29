@@ -690,7 +690,78 @@ public class MainActivity extends Activity {
                     if (heroStatus != null) heroStatus.setText("Account collegato • " + all.size() + " contenuti • Xtream");
                 });
             }
+
+            final boolean haveMovie = countType(ContentType.MOVIE) > 0;
+            final boolean haveSeries = countType(ContentType.SERIES) > 0;
+            if (!haveMovie || !haveSeries) loadM3uExtrasAsync(base, user, pass, haveMovie, haveSeries);
         }, "iptv-vod-series").start();
+    }
+
+    private void loadM3uExtrasAsync(String base, String user, String pass, boolean haveMovie, boolean haveSeries) {
+        new Thread(() -> {
+            int movies = 0, series = 0;
+            try {
+                String url = base + "/get.php?username=" + enc(user) + "&password=" + enc(pass)
+                        + "&type=m3u_plus&output=mpegts";
+                HttpURLConnection c = open(url, 15000, 120000);
+                int code = c.getResponseCode();
+                if (code < 200 || code >= 300) throw new IOException("HTTP " + code);
+                BufferedReader br = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8), 32768);
+                String line, n = null, g = "Senza gruppo", id = "", logo = "";
+                List<Channel> batch = new ArrayList<>();
+                while ((line = br.readLine()) != null) {
+                    line = line.replace("\uFEFF","").trim();
+                    if (line.isEmpty()) continue;
+                    if (line.startsWith("#EXTINF")) {
+                        int comma = line.indexOf(',');
+                        n = comma >= 0 ? line.substring(comma + 1).trim() : "Contenuto";
+                        g = attr(line, "group-title", "Senza gruppo");
+                        id = attr(line, "tvg-id", "");
+                        logo = attr(line, "tvg-logo", "");
+                    } else if (line.startsWith("#EXTGRP:")) {
+                        g = line.substring(8).trim();
+                    } else if (!line.startsWith("#") && n != null) {
+                        ContentType t = classify(n, g, line);
+                        boolean take = (t == ContentType.MOVIE && !haveMovie && movies < 15000)
+                                || (t == ContentType.SERIES && !haveSeries && series < 15000);
+                        if (take) {
+                            batch.add(new Channel(n, line, g, id, logo, t, id, ""));
+                            if (t == ContentType.MOVIE) movies++; else series++;
+                        }
+                        if (batch.size() >= 100) {
+                            List<Channel> send = new ArrayList<>(batch);
+                            batch.clear();
+                            runOnUiThread(() -> {
+                                all.addAll(send);
+                                setupGroups();
+                                filter();
+                                if (stats != null) stats.setText(all.size() + " contenuti • " + favCount() + " preferiti");
+                            });
+                        }
+                        n = null; g = "Senza gruppo"; id = ""; logo = "";
+                    }
+                    if ((haveMovie || movies >= 15000) && (haveSeries || series >= 15000)) break;
+                }
+                if (!batch.isEmpty()) {
+                    List<Channel> send = new ArrayList<>(batch);
+                    runOnUiThread(() -> {
+                        all.addAll(send);
+                        setupGroups();
+                        filter();
+                    });
+                }
+                br.close(); c.disconnect();
+                final int fm=movies, fs=series;
+                runOnUiThread(() -> {
+                    if (heroStatus != null) heroStatus.setText("Xtream • Live + Film + Serie TV caricati");
+                    if (stats != null) stats.setText(all.size() + " contenuti • " + favCount() + " preferiti");
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    if (heroStatus != null) heroStatus.setText("Live caricati • Film/Serie non disponibili dal server");
+                });
+            }
+        }, "iptv-m3u-extras").start();
     }
 
     private PlayerResult tryXtreamLiveOnly(String base, String user, String pass) throws Exception {
