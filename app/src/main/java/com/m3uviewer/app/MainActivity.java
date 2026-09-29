@@ -651,7 +651,11 @@ public class MainActivity extends Activity {
                     String ext=o.optString("container_extension","mp4"); if(ext.isEmpty()) ext="mp4";
                     extra.add(new Channel(n,base+"/movie/"+enc(user)+"/"+enc(pass)+"/"+id+"."+ext,cat,id,logo,ContentType.MOVIE,id,ext));
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    if (heroStatus != null) heroStatus.setText("Film: caricamento non disponibile • provo playlist completa…");
+                });
+            }
 
             try {
                 JSONArray serCats = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
@@ -671,7 +675,11 @@ public class MainActivity extends Activity {
                     String logo=o.optString("cover","");
                     extra.add(new Channel(n,"",cat,id,logo,ContentType.SERIES,id,""));
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    if (heroStatus != null) heroStatus.setText("Serie TV: caricamento non disponibile • provo playlist completa…");
+                });
+            }
 
             if (!extra.isEmpty()) {
                 runOnUiThread(() -> {
@@ -807,12 +815,22 @@ public class MainActivity extends Activity {
     }
 
     private JSONArray fetchJsonArray(String url) throws Exception {
-        HttpURLConnection c=open(url);
+        HttpURLConnection c=open(url, 15000, 60000);
         int code=c.getResponseCode();
         if(code<200||code>=300) throw new IOException("HTTP "+code);
-        String body=readLimited(c.getInputStream(), 20_000_000);
+        String body=readLimited(c.getInputStream(), 100_000_000);
         c.disconnect();
-        return new JSONArray(body);
+        String trimmed=body.trim();
+        if (trimmed.startsWith("[")) return new JSONArray(trimmed);
+        if (trimmed.startsWith("{")) {
+            JSONObject root = new JSONObject(trimmed);
+            JSONArray data = root.optJSONArray("data");
+            if (data != null) return data;
+            JSONArray items = root.optJSONArray("items");
+            if (items != null) return items;
+            throw new IOException("risposta Xtream senza elenco contenuti");
+        }
+        throw new IOException("risposta Xtream non valida");
     }
 
     private HttpURLConnection open(String url) throws Exception {
