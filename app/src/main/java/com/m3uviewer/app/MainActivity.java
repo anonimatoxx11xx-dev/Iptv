@@ -32,11 +32,11 @@ public class MainActivity extends Activity {
     private EditText search, serverInput, portInput, usernameInput, passwordInput;
     private Spinner groups;
     private TextView fileName, stats, resultCount, heroStatus, credentialSummary;
-    private LinearLayout filePanel, iptvPanel, credentialsSummary;
+    private LinearLayout filePanel, iptvPanel, credentialsSummary, loginPanel, appPanel;
     private TextView modeFile, modeIptv;
     private ProgressBar loading;
     private Button connectButton;
-    private TextView tabLive, tabMovies, tabSeries, tabAi;
+    private TextView tabLive, tabMovies, tabSeries, tabAi, logoutButton, appAccountStatus;
     private LinearLayout aiPanel, contentPanel;
     private EditText aiQuery;
     private TextView aiAnswer, contentTitle;
@@ -84,6 +84,11 @@ public class MainActivity extends Activity {
         filePanel = findViewById(R.id.filePanel);
         iptvPanel = findViewById(R.id.iptvPanel);
         credentialsSummary = findViewById(R.id.credentialsSummary);
+        loginPanel = findViewById(R.id.loginPanel);
+        appPanel = findViewById(R.id.appPanel);
+        logoutButton = findViewById(R.id.logoutButton);
+        appAccountStatus = findViewById(R.id.appAccountStatus);
+        logoutButton.setOnClickListener(v -> showLogin());
         modeFile = findViewById(R.id.modeFile);
         modeIptv = findViewById(R.id.modeIptv);
         loading = findViewById(R.id.loading);
@@ -132,7 +137,7 @@ public class MainActivity extends Activity {
     private void setupModes() {
         modeFile.setOnClickListener(v -> showMode(false));
         modeIptv.setOnClickListener(v -> showMode(true));
-        showMode(false);
+        showMode(true);
     }
 
     private void showMode(boolean iptv) {
@@ -737,7 +742,7 @@ public class MainActivity extends Activity {
             setLoading(false);
             all.clear(); all.addAll(channels);
             heroStatus.setText("Account collegato • " + all.size() + " canali • " + source);
-            stats.setText(all.size() + " canali • " + favCount() + " preferiti");
+            if (stats != null) stats.setText(all.size() + " canali • " + favCount() + " preferiti");
             getPreferences(0).edit().putString("base",base).putString("username",user).apply();
             credentialsSummary.setVisibility(View.VISIBLE);
             credentialSummary.setText(base + "\nUtente: " + user + " • Password: ••••••••");
@@ -745,6 +750,20 @@ public class MainActivity extends Activity {
             connectButton.setEnabled(true);
             Toast.makeText(this, "Playlist caricata", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void enterApp(String status) {
+        if (loginPanel != null) loginPanel.setVisibility(View.GONE);
+        if (appPanel != null) appPanel.setVisibility(View.VISIBLE);
+        if (appAccountStatus != null) appAccountStatus.setText(status);
+        selectType(ContentType.LIVE);
+    }
+
+    private void showLogin() {
+        if (appPanel != null) appPanel.setVisibility(View.GONE);
+        if (loginPanel != null) loginPanel.setVisibility(View.VISIBLE);
+        if (heroStatus != null) heroStatus.setText("Inserisci le credenziali per entrare");
+        setLoading(false);
     }
 
     private void setLoading(boolean value) {
