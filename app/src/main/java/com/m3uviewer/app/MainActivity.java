@@ -275,22 +275,18 @@ public class MainActivity extends Activity {
         while (path.endsWith("/") && !path.isEmpty()) path = path.substring(0, path.length() - 1);
 
         LinkedHashSet<String> candidates = new LinkedHashSet<>();
+        int[] httpPorts = {80, 8080, 8000, 8880, 25461, 25460, 25462, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8001, 8081};
+        int[] httpsPorts = {443, 8443, 25463, 4433};
         String scheme = u.getScheme() == null ? "" : u.getScheme().toLowerCase(Locale.ROOT);
 
-        int[] httpPorts = {80, 25461, 8080, 8000, 8880, 2052, 2053, 2082, 2083, 2086, 2087, 2095, 2096, 8001, 8081, 25460, 25462};
-        int[] httpsPorts = {443, 8443, 25463, 4433};
-
         if ("https".equals(scheme)) {
-            for (int p : httpsPorts) addCandidate(candidates, "https", host, p, path);
-        } else if ("http".equals(scheme)) {
-            for (int p : httpPorts) addCandidate(candidates, "http", host, p, path);
-            for (int p : httpsPorts) addCandidate(candidates, "https", host, p, path);
+            for (int p : httpsPorts) addCandidates(candidates, "https", host, p, path);
         } else {
-            for (int p : httpPorts) addCandidate(candidates, "http", host, p, path);
-            for (int p : httpsPorts) addCandidate(candidates, "https", host, p, path);
+            for (int p : httpPorts) addCandidates(candidates, "http", host, p, path);
+            for (int p : httpsPorts) addCandidates(candidates, "https", host, p, path);
         }
 
-        ExecutorService executor = Executors.newFixedThreadPool(Math.min(8, candidates.size()));
+        ExecutorService executor = Executors.newFixedThreadPool(Math.min(10, Math.max(1, candidates.size())));
         CompletionService<String> completion = new ExecutorCompletionService<>(executor);
         int submitted = 0;
         for (String candidate : candidates) {
@@ -299,31 +295,35 @@ public class MainActivity extends Activity {
             submitted++;
         }
 
-        Exception last = null;
         try {
             for (int i = 0; i < submitted; i++) {
-                try {
-                    String found = completion.take().get();
-                    if (found != null) {
-                        executor.shutdownNow();
-                        return found;
-                    }
-                } catch (ExecutionException e) {
-                    Throwable cause = e.getCause();
-                    if (cause instanceof Exception) last = (Exception) cause;
+                Future<String> future = completion.take();
+                String found = future.get();
+                if (found != null) {
+                    executor.shutdownNow();
+                    return found;
                 }
             }
+        } catch (ExecutionException e) {
+            // Continue until all candidates have been checked.
         } finally {
             executor.shutdownNow();
         }
-
         throw new IOException("nessun endpoint Xtream trovato automaticamente");
     }
 
-    private void addCandidate(Set<String> set, String scheme, String host, int port, String path) {
+    private void addCandidates(Set<String> set, String scheme, String host, int port, String path) {
         String h = host;
         if (h.contains(":") && !h.startsWith("[")) h = "[" + h + "]";
-        set.add(scheme + "://" + h + ":" + port + path);
+        String[] paths = {"", "/player_api.php", "/c", "/iptv", "/api"};
+        for (String suffix : paths) {
+            String p = path + suffix;
+            if (p.endsWith("/player_api.php")) {
+                set.add(scheme + "://" + h + ":" + port + p);
+            } else {
+                set.add(scheme + "://" + h + ":" + port + p);
+            }
+        }
     }
 
     private boolean hasExplicitPort(String server) {
@@ -337,7 +337,12 @@ public class MainActivity extends Activity {
     }
 
     private boolean probeXtream(String base, String user, String pass) throws Exception {
-        String apiUrl = base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass);
+        String cleanBase = base;
+        String apiBase = cleanBase;
+        if (cleanBase.endsWith("/player_api.php")) {
+            apiBase = cleanBase.substring(0, cleanBase.length() - "/player_api.php".length());
+        }
+        String apiUrl = apiBase + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass);
         HttpURLConnection c = null;
         try {
             c = open(apiUrl, DISCOVERY_CONNECT_TIMEOUT_MS, DISCOVERY_READ_TIMEOUT_MS);
@@ -346,7 +351,10 @@ public class MainActivity extends Activity {
                 String body = readLimited(c.getInputStream(), 512_000).trim();
                 if (body.startsWith("{")) {
                     JSONObject root = new JSONObject(body);
-                    if (root.has("user_info") || root.has("server_info")) return true;
+                    JSONObject info = root.optJSONObject("user_info");
+                    if (root.has("server_info") || info != null) {
+                        if (info == null || info.optString("auth", "1").equals("1") || info.optString("status", "").equalsIgnoreCase("Active")) return true;
+                    }
                 }
             }
         } catch (Exception ignored) {
@@ -354,7 +362,7 @@ public class MainActivity extends Activity {
             if (c != null) c.disconnect();
         }
 
-        String m3uUrl = base + "/get.php?username=" + enc(user) + "&password=" + enc(pass) + "&type=m3u_plus&output=ts";
+        String m3uUrl = apiBase + "/get.php?username=" + enc(user) + "&password=" + enc(pass) + "&type=m3u_plus&output=ts";
         c = null;
         try {
             c = open(m3uUrl, DISCOVERY_CONNECT_TIMEOUT_MS, DISCOVERY_READ_TIMEOUT_MS);
@@ -368,7 +376,6 @@ public class MainActivity extends Activity {
         }
         return false;
     }
-
     private PlayerResult tryXtreamApi(String base, String user, String pass) throws Exception {
         String authUrl = base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass);
         HttpURLConnection auth = open(authUrl);
@@ -433,20 +440,18 @@ public class MainActivity extends Activity {
     }
 
     private String normalizeServer(String server, String port) {
-        String base=server.trim();
-        if(!base.matches("(?i)^https?://.*")) base="http://"+base;
-        Uri u=Uri.parse(base);
-        String scheme=u.getScheme();
-        if(scheme==null) throw new IllegalArgumentException("server non valido");
-        String host=u.getHost();
-        if(host==null||host.isEmpty()) throw new IllegalArgumentException("server non valido");
-        if(!port.isEmpty() && u.getPort()==-1) {
-            base=scheme+"://"+host+":"+port+(u.getPath()==null?"":u.getPath());
-        }
-        while(base.endsWith("/")) base=base.substring(0,base.length()-1);
-        return base;
+        String s = server.trim();
+        if (!s.matches("(?i)^https?://.*")) s = "http://" + s;
+        Uri u = Uri.parse(s);
+        String scheme = u.getScheme() == null ? "http" : u.getScheme();
+        String host = u.getHost();
+        if (host == null || host.isEmpty()) throw new IllegalArgumentException("server non valido");
+        int p = u.getPort();
+        if (!port.trim().isEmpty()) p = Integer.parseInt(port.trim());
+        String path = u.getPath() == null ? "" : u.getPath();
+        if (p > 0) return scheme + "://" + host + ":" + p + path;
+        return scheme + "://" + host + path;
     }
-
     private String enc(String s) { try{return URLEncoder.encode(s,"UTF-8");}catch(Exception e){return s;} }
 
     private String readLimited(InputStream in, int maxBytes) throws Exception {
