@@ -2,19 +2,19 @@ package com.m3uviewer.app;
 
 import android.app.Activity;
 import android.content.*;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.view.*;
 import android.widget.*;
-import androidx.annotation.Nullable;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.*;
 
-public class MainActivity extends Activity {
+public class MainActivity {
     private static final int PICK_FILE=401;
     private final List<Channel> all=new ArrayList<>(), filtered=new ArrayList<>();
     private ChannelAdapter adapter; private EditText search; private Spinner groups;
@@ -31,7 +31,7 @@ public class MainActivity extends Activity {
         setupGroups();
     }
     private void openFile(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");startActivityForResult(i,PICK_FILE);}
-    @Override protected void onActivityResult(int r,int code,@Nullable Intent d){super.onActivityResult(r,code,d);if(r!=PICK_FILE||code!=RESULT_OK||d==null||d.getData()==null)return;try{
+    @Override protected void onActivityResult(int r,int code,Intent d){super.onActivityResult(r,code,d);if(r!=PICK_FILE||code!=RESULT_OK||d==null||d.getData()==null)return;try{
         List<Channel> p=parse(d.getData());all.clear();all.addAll(p);fileName.setText(name(d.getData()));stats.setText(all.size()+" canali caricati • Tocca un canale per i dettagli");setupGroups();filter();Toast.makeText(this,"Playlist caricata",Toast.LENGTH_SHORT).show();
     }catch(Exception e){Toast.makeText(this,"Errore lettura: "+e.getMessage(),Toast.LENGTH_LONG).show();}}
     private List<Channel> parse(Uri u)throws Exception{List<Channel> out=new ArrayList<>();InputStream in=getContentResolver().openInputStream(u);if(in==null)throw new IOException("file non accessibile");
