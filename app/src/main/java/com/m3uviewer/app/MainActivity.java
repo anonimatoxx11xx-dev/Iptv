@@ -931,7 +931,7 @@ public class MainActivity extends Activity {
             ((TextView)v.findViewById(R.id.channelIndex)).setText(String.valueOf(p+1));
             ((TextView)v.findViewById(R.id.channelName)).setText(c.name);
             ((TextView)v.findViewById(R.id.channelGroup)).setText((c.type==ContentType.MOVIE?"FILM":c.type==ContentType.SERIES?"SERIE":"LIVE")+" • "+c.group);
-            TextView f=v.findViewById(R.id.favorite); f.setText(fav(c.url)?"★":"☆"); f.setOnClickListener(x->toggle(c));
+            TextView play=v.findViewById(R.id.playNow); play.setOnClickListener(x->playChannel(c)); TextView f=v.findViewById(R.id.favorite); f.setText(fav(c.url)?"★":"☆"); f.setOnClickListener(x->toggle(c));
             return v;
         }
     }
