@@ -1,4 +1,6 @@
 plugins { id 'com.android.application' }
+
+// Media3 / ExoPlayer for integrated IPTV playback
 android {
     namespace 'com.m3uviewer.app'
     compileSdk 35
@@ -9,10 +11,21 @@ android {
         versionCode 1
         versionName '1.0'
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+}
+
+dependencies {
+    def media3_version = "1.11.1"
+    implementation "androidx.media3:media3-exoplayer:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-hls:$media3_version"
+    implementation "androidx.media3:media3-ui:$media3_version"
 }
