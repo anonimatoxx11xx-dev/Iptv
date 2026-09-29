@@ -338,7 +338,7 @@ public class MainActivity extends Activity {
                 String found = future.get();
                 if (found != null) {
                     executor.shutdownNow();
-                    return found;
+                    return stripXtreamEndpoint(found);
                 }
             }
         } catch (ExecutionException e) {
@@ -347,6 +347,20 @@ public class MainActivity extends Activity {
             executor.shutdownNow();
         }
         throw new IOException("nessun endpoint Xtream trovato automaticamente");
+    }
+
+    private String stripXtreamEndpoint(String url) {
+        if (url == null) return null;
+        String s = url.trim();
+        String lower = s.toLowerCase(Locale.ROOT);
+        String[] suffixes = {"/player_api.php", "/get.php"};
+        for (String suffix : suffixes) {
+            if (lower.endsWith(suffix)) {
+                return s.substring(0, s.length() - suffix.length());
+            }
+        }
+        while (s.endsWith("/")) s = s.substring(0, s.length() - 1);
+        return s;
     }
 
     private String knownProviderHost(String host) {
