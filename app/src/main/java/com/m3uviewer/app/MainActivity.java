@@ -359,6 +359,7 @@ public class MainActivity extends Activity {
                     PlayerResult api = tryXtreamLiveOnly(providerBase, user, pass);
                     if (api.channels.isEmpty()) throw new IOException("nessun canale Live restituito dal server");
                     finishConnection(api.channels, providerBase, user, "Xtream Live");
+                    loadVodAndSeriesAsync(providerBase, user, pass);
                 } catch (Exception e) {
                     runOnUiThread(() -> {
                         setLoading(false);
@@ -626,6 +627,62 @@ public class MainActivity extends Activity {
                 if (c != null) c.disconnect();
             }
         }, "iptv-m3u").start();
+    }
+
+    private void loadVodAndSeriesAsync(String base, String user, String pass) {
+        new Thread(() -> {
+            List<Channel> extra = new ArrayList<>();
+            try {
+                JSONArray vodCats = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
+                        + "&password=" + enc(pass) + "&action=get_vod_categories");
+                Map<String,String> vodMap = new HashMap<>();
+                for (int i=0;i<vodCats.length();i++) {
+                    JSONObject o=vodCats.optJSONObject(i);
+                    if(o!=null) vodMap.put(o.optString("category_id",""), o.optString("category_name","Film"));
+                }
+                JSONArray vod = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
+                        + "&password=" + enc(pass) + "&action=get_vod_streams");
+                for(int i=0;i<vod.length();i++){
+                    JSONObject o=vod.optJSONObject(i); if(o==null) continue;
+                    String id=o.optString("stream_id",""); if(id.isEmpty()) continue;
+                    String n=o.optString("name","Film");
+                    String cat=vodMap.get(o.optString("category_id","")); if(cat==null||cat.isEmpty()) cat="Film";
+                    String logo=o.optString("stream_icon","");
+                    String ext=o.optString("container_extension","mp4"); if(ext.isEmpty()) ext="mp4";
+                    extra.add(new Channel(n,base+"/movie/"+enc(user)+"/"+enc(pass)+"/"+id+"."+ext,cat,id,logo,ContentType.MOVIE,id,ext));
+                }
+            } catch (Exception ignored) {}
+
+            try {
+                JSONArray serCats = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
+                        + "&password=" + enc(pass) + "&action=get_series_categories");
+                Map<String,String> serMap = new HashMap<>();
+                for (int i=0;i<serCats.length();i++) {
+                    JSONObject o=serCats.optJSONObject(i);
+                    if(o!=null) serMap.put(o.optString("category_id",""), o.optString("category_name","Serie"));
+                }
+                JSONArray series = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
+                        + "&password=" + enc(pass) + "&action=get_series");
+                for(int i=0;i<series.length();i++){
+                    JSONObject o=series.optJSONObject(i); if(o==null) continue;
+                    String id=o.optString("series_id",""); if(id.isEmpty()) continue;
+                    String n=o.optString("name","Serie");
+                    String cat=serMap.get(o.optString("category_id","")); if(cat==null||cat.isEmpty()) cat="Serie";
+                    String logo=o.optString("cover","");
+                    extra.add(new Channel(n,"",cat,id,logo,ContentType.SERIES,id,""));
+                }
+            } catch (Exception ignored) {}
+
+            if (!extra.isEmpty()) {
+                runOnUiThread(() -> {
+                    all.addAll(extra);
+                    setupGroups();
+                    filter();
+                    if (stats != null) stats.setText(all.size() + " contenuti • " + favCount() + " preferiti");
+                    if (heroStatus != null) heroStatus.setText("Account collegato • " + all.size() + " contenuti • Xtream");
+                });
+            }
+        }, "iptv-vod-series").start();
     }
 
     private PlayerResult tryXtreamLiveOnly(String base, String user, String pass) throws Exception {
