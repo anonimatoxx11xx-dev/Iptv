@@ -11,7 +11,7 @@
 <TextView android:id="@+id/fileName" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nessun file caricato" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="15sp"/>
 <TextView android:id="@+id/stats" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="Apri un file .m3u o .m3u8 per iniziare" android:textColor="#989DBA" android:textSize="13sp"/>
 </LinearLayout>
-<EditText android:id="@+id/search" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="14dp" android:background="@drawable/bg_search" android:hint="Cerca canale, gruppo o ID…" android:hintTextColor="#737895" android:textColor="#FFFFFF" android:singleLine="true" android:paddingStart="16dp" android:paddingEnd="16dp"/>
+<EditText android:id="@+id/search" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="14dp" android:background="@drawable/bg_search" android:hint="Cerca canale, gruppo o ID…" android:textColorHint="#737895" android:textColor="#FFFFFF" android:singleLine="true" android:paddingStart="16dp" android:paddingEnd="16dp"/>
 <Spinner android:id="@+id/groupSpinner" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="10dp" android:background="@drawable/bg_search" android:paddingStart="12dp" android:paddingEnd="12dp"/>
 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp">
 <TextView android:id="@+id/resultCount" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="0 risultati" android:textColor="#A7ABC7" android:textSize="13sp"/>
