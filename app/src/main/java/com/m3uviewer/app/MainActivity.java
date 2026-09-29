@@ -301,12 +301,12 @@ public class MainActivity extends Activity {
         return c;
     }
 
-    private String normalizeServer(String server, String port) throws MalformedURLException {
+    private String normalizeServer(String server, String port) {
         String base=server.trim();
         if(!base.matches("(?i)^https?://.*")) base="http://"+base;
         Uri u=Uri.parse(base);
         String scheme=u.getScheme();
-        if(scheme==null) throw new MalformedURLException("server non valido");
+        if(scheme==null) throw new IllegalArgumentException("server non valido");
         String host=u.getHost();
         if(host==null||host.isEmpty()) throw new MalformedURLException("server non valido");
         if(!port.isEmpty() && u.getPort()==-1) {
