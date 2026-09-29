@@ -45,15 +45,38 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
-        setContentView(R.layout.activity_main);
-        applySystemInsets();
-        bindViews();
-        setupList();
-        setupModes();
-        setupTabs();
-        loadSavedCredentials();
-        setupGroups();
-        filter();
+        try {
+            setContentView(R.layout.activity_main);
+            applySystemInsets();
+            bindViews();
+            setupList();
+            setupModes();
+            setupTabs();
+            loadSavedCredentials();
+            setupGroups();
+            filter();
+        } catch (Throwable e) {
+            showStartupError(e);
+        }
+    }
+
+    private void showStartupError(Throwable e) {
+        try {
+            String msg = e.getClass().getSimpleName();
+            if (e.getMessage() != null && !e.getMessage().trim().isEmpty()) {
+                msg += "\n" + e.getMessage();
+            }
+            TextView t = new TextView(this);
+            t.setText("IPTV VIEWER\\n\\nAvvio non riuscito.\\n\\n" + msg);
+            t.setTextColor(0xFFFFFFFF);
+            t.setTextSize(15);
+            t.setGravity(Gravity.CENTER);
+            t.setPadding(dp(28), dp(28), dp(28), dp(28));
+            t.setBackgroundColor(0xFF0A0F1D);
+            setContentView(t);
+        } catch (Throwable ignored) {
+            // Keep the process alive long enough for Android to report the original failure.
+        }
     }
 
     private void applySystemInsets() {
