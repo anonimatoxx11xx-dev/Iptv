@@ -36,7 +36,12 @@ public class MainActivity extends Activity {
     private TextView modeFile, modeIptv;
     private ProgressBar loading;
     private Button connectButton;
+    private TextView tabLive, tabMovies, tabSeries, tabAi;
+    private LinearLayout aiPanel, contentPanel;
+    private EditText aiQuery;
+    private TextView aiAnswer, contentTitle;
     private String selected = "Tutti";
+    private ContentType currentType = ContentType.LIVE;
 
     @Override public void onCreate(Bundle b) {
         super.onCreate(b);
@@ -45,6 +50,7 @@ public class MainActivity extends Activity {
         bindViews();
         setupList();
         setupModes();
+        setupTabs();
         loadSavedCredentials();
         setupGroups();
         filter();
@@ -82,6 +88,15 @@ public class MainActivity extends Activity {
         modeIptv = findViewById(R.id.modeIptv);
         loading = findViewById(R.id.loading);
         connectButton = findViewById(R.id.btnConnect);
+        tabLive = findViewById(R.id.tabLive);
+        tabMovies = findViewById(R.id.tabMovies);
+        tabSeries = findViewById(R.id.tabSeries);
+        tabAi = findViewById(R.id.tabAi);
+        aiPanel = findViewById(R.id.aiPanel);
+        contentPanel = findViewById(R.id.contentPanel);
+        aiQuery = findViewById(R.id.aiQuery);
+        aiAnswer = findViewById(R.id.aiAnswer);
+        contentTitle = findViewById(R.id.contentTitle);
         serverInput = findViewById(R.id.serverInput);
         portInput = findViewById(R.id.portInput);
         usernameInput = findViewById(R.id.usernameInput);
@@ -128,6 +143,89 @@ public class MainActivity extends Activity {
         modeFile.setBackgroundResource(iptv ? R.drawable.bg_toggle : R.drawable.bg_toggle_selected);
         modeFile.setTextColor(iptv ? getColor(R.color.muted) : getColor(R.color.primary));
         if (iptv) loadSavedCredentials();
+    }
+
+    private void setupTabs() {
+        tabLive.setOnClickListener(v -> selectType(ContentType.LIVE));
+        tabMovies.setOnClickListener(v -> selectType(ContentType.MOVIE));
+        tabSeries.setOnClickListener(v -> selectType(ContentType.SERIES));
+        tabAi.setOnClickListener(v -> selectType(ContentType.AI));
+        aiQuery.setOnEditorActionListener((v, actionId, event) -> { runAi(); return true; });
+        findViewById(R.id.aiAsk).setOnClickListener(v -> runAi());
+        selectType(ContentType.LIVE);
+    }
+
+    private void selectType(ContentType type) {
+        currentType = type;
+        boolean ai = type == ContentType.AI;
+        contentPanel.setVisibility(ai ? View.GONE : View.VISIBLE);
+        aiPanel.setVisibility(ai ? View.VISIBLE : View.GONE);
+        setTabState(tabLive, type == ContentType.LIVE);
+        setTabState(tabMovies, type == ContentType.MOVIE);
+        setTabState(tabSeries, type == ContentType.SERIES);
+        setTabState(tabAi, type == ContentType.AI);
+        if (!ai) {
+            contentTitle.setText(type == ContentType.LIVE ? "LIVE TV" : type == ContentType.MOVIE ? "FILM" : "SERIE");
+            setupGroups();
+            filter();
+        } else {
+            buildAiHome();
+        }
+    }
+
+    private void setTabState(TextView v, boolean selected) {
+        v.setBackgroundResource(selected ? R.drawable.bg_toggle_selected : R.drawable.bg_toggle);
+        v.setTextColor(selected ? getColor(R.color.primary) : getColor(R.color.muted));
+    }
+
+    private void buildAiHome() {
+        int live = countType(ContentType.LIVE);
+        int movies = countType(ContentType.MOVIE);
+        int series = countType(ContentType.SERIES);
+        aiAnswer.setText("Analizzo la tua libreria IPTV localmente.\\n\\n" +
+                "• " + live + " canali Live\\n" +
+                "• " + movies + " film\\n" +
+                "• " + series + " serie\\n\\n" +
+                "Scrivi cosa vuoi vedere: sport, news, film, serie, bambini oppure una categoria.");
+    }
+
+    private int countType(ContentType type) {
+        int n = 0;
+        for (Channel c : all) if (c.type == type) n++;
+        return n;
+    }
+
+    private void runAi() {
+        String q = aiQuery.getText().toString().trim().toLowerCase(Locale.ROOT);
+        if (all.isEmpty()) {
+            aiAnswer.setText("Prima collega una playlist IPTV o importa un file M3U.");
+            return;
+        }
+        List<Channel> hits = new ArrayList<>();
+        for (Channel c : all) {
+            String hay = (c.name + " " + c.group).toLowerCase(Locale.ROOT);
+            if (q.isEmpty() || hay.contains(q) ||
+                (q.contains("sport") && hay.matches(".*(sport|calcio|football|tennis|formula|basket|golf).*")) ||
+                (q.contains("news") && hay.matches(".*(news|24|cnn|bbc|rai|tg|sky).*")) ||
+                (q.contains("film") && c.type == ContentType.MOVIE) ||
+                (q.contains("serie") && c.type == ContentType.SERIES) ||
+                (q.contains("bamb") && hay.matches(".*(kids|junior|cartoon|disney|bambini).*"))) {
+                hits.add(c);
+                if (hits.size() >= 8) break;
+            }
+        }
+        if (q.isEmpty()) {
+            buildAiHome();
+            return;
+        }
+        if (hits.isEmpty()) {
+            aiAnswer.setText("Non ho trovato una corrispondenza diretta per «" + q + "». Prova con sport, news, film, serie o il nome di una categoria.");
+            return;
+        }
+        StringBuilder s = new StringBuilder("IA • Ho trovato " + hits.size() + " proposte:\\n\\n");
+        for (Channel c : hits) s.append("▶ ").append(c.name).append("  •  ").append(c.group).append("\\n");
+        s.append("\\nTocca FILM, SERIE o LIVE per aprire la lista e riprodurre il contenuto.");
+        aiAnswer.setText(s.toString());
     }
 
     private void openFile() {
@@ -177,12 +275,19 @@ public class MainActivity extends Activity {
                 g = line.substring(8).trim();
             } else if (!line.startsWith("#")) {
                 if (n == null) n = line;
-                out.add(new Channel(n, line, g, id, logo));
+                out.add(new Channel(n, line, g, id, logo, classify(n, g, line), id, ""));
                 n = null; g = "Senza gruppo"; id = ""; logo = "";
             }
         }
         br.close();
         return out;
+    }
+
+    private ContentType classify(String name, String group, String url) {
+        String h = ((name == null ? "" : name) + " " + (group == null ? "" : group) + " " + (url == null ? "" : url)).toLowerCase(Locale.ROOT);
+        if (h.matches(".*(series|serie|tv show|season|stagione).*")) return ContentType.SERIES;
+        if (h.matches(".*(movie|movies|film|cinema|vod).*") || h.matches(".*\\.(mp4|mkv|avi|mov)(\\?|$).*")) return ContentType.MOVIE;
+        return ContentType.LIVE;
     }
 
     private void connectIptv() {
@@ -512,8 +617,48 @@ public class MainActivity extends Activity {
             if(cat==null||cat.isEmpty()) cat="Senza gruppo";
             String logo=o.optString("stream_icon","");
             String streamUrl=base+"/live/"+enc(user)+"/"+enc(pass)+"/"+id+".ts";
-            channels.add(new Channel(n,streamUrl,cat,id,logo));
+            channels.add(new Channel(n,streamUrl,cat,id,logo,ContentType.LIVE,id,""));
         }
+        // VOD / Film
+        try {
+            JSONArray vodCats = fetchJsonArray(base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass) + "&action=get_vod_categories");
+            Map<String,String> vodMap = new HashMap<>();
+            for (int i=0;i<vodCats.length();i++) {
+                JSONObject o=vodCats.optJSONObject(i);
+                if(o!=null) vodMap.put(o.optString("category_id",""), o.optString("category_name","Film"));
+            }
+            JSONArray vod = fetchJsonArray(base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass) + "&action=get_vod_streams");
+            for(int i=0;i<vod.length();i++){
+                JSONObject o=vod.optJSONObject(i); if(o==null) continue;
+                String id=o.optString("stream_id",""); if(id.isEmpty()) continue;
+                String n=o.optString("name","Film");
+                String cat=vodMap.get(o.optString("category_id","")); if(cat==null||cat.isEmpty()) cat="Film";
+                String logo=o.optString("stream_icon","");
+                String ext=o.optString("container_extension","mp4"); if(ext.isEmpty()) ext="mp4";
+                String streamUrl=base+"/movie/"+enc(user)+"/"+enc(pass)+"/"+id+"."+ext;
+                channels.add(new Channel(n,streamUrl,cat,id,logo,ContentType.MOVIE,id,ext));
+            }
+        } catch(Exception ignored) {}
+
+        // Serie: the item opens an episode chooser instead of guessing an episode URL.
+        try {
+            JSONArray serCats = fetchJsonArray(base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass) + "&action=get_series_categories");
+            Map<String,String> serMap = new HashMap<>();
+            for (int i=0;i<serCats.length();i++) {
+                JSONObject o=serCats.optJSONObject(i);
+                if(o!=null) serMap.put(o.optString("category_id",""), o.optString("category_name","Serie"));
+            }
+            JSONArray series = fetchJsonArray(base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass) + "&action=get_series");
+            for(int i=0;i<series.length();i++){
+                JSONObject o=series.optJSONObject(i); if(o==null) continue;
+                String id=o.optString("series_id",""); if(id.isEmpty()) continue;
+                String n=o.optString("name","Serie");
+                String cat=serMap.get(o.optString("category_id","")); if(cat==null||cat.isEmpty()) cat="Serie";
+                String logo=o.optString("cover","");
+                channels.add(new Channel(n,"",cat,id,logo,ContentType.SERIES,id,""));
+            }
+        } catch(Exception ignored) {}
+
         return new PlayerResult(channels);
     }
 
@@ -593,6 +738,7 @@ public class MainActivity extends Activity {
             all.clear(); all.addAll(channels);
             heroStatus.setText("Account collegato • " + all.size() + " canali • " + source);
             stats.setText(all.size() + " canali • " + favCount() + " preferiti");
+            getPreferences(0).edit().putString("base",base).putString("username",user).apply();
             credentialsSummary.setVisibility(View.VISIBLE);
             credentialSummary.setText(base + "\nUtente: " + user + " • Password: ••••••••");
             setupGroups(); filter();
@@ -671,10 +817,11 @@ public class MainActivity extends Activity {
         filtered.clear();
         matchingCount=0;
         for(Channel c:all){
+            boolean typeOk=currentType == ContentType.AI || c.type == currentType;
             boolean groupOk="Tutti".equals(selected)||c.group.equals(selected);
             boolean textOk=q.isEmpty()||c.name.toLowerCase(Locale.ROOT).contains(q)
                 ||c.group.toLowerCase(Locale.ROOT).contains(q)||c.id.toLowerCase(Locale.ROOT).contains(q);
-            if(groupOk&&textOk){
+            if(typeOk&&groupOk&&textOk){
                 matchingCount++;
                 if(filtered.size()<DISPLAY_LIMIT) filtered.add(c);
             }
@@ -691,14 +838,74 @@ public class MainActivity extends Activity {
     }
 
     private void playChannel(Channel c) {
-        if (c == null || c.url == null || c.url.trim().isEmpty()) {
+        if (c == null) return;
+        if (c.type == ContentType.SERIES && (c.url == null || c.url.trim().isEmpty())) {
+            openSeriesEpisodes(c);
+            return;
+        }
+        if (c.url == null || c.url.trim().isEmpty()) {
             Toast.makeText(this, "Stream non disponibile", Toast.LENGTH_SHORT).show();
             return;
         }
         Intent i = new Intent(this, PlayerActivity.class);
         i.putExtra("url", c.url);
         i.putExtra("name", c.name);
+        i.putExtra("referer", "http://netherland.warstarlive.com/");
+        i.putExtra("type", c.type.name());
         startActivity(i);
+    }
+
+    private void openSeriesEpisodes(Channel series) {
+        String base = getPreferences(0).getString("base", "");
+        String user = getPreferences(0).getString("username", "");
+        String pass = getPreferences(0).getString("password", "");
+        if (base.isEmpty() || user.isEmpty() || pass.isEmpty()) {
+            Toast.makeText(this, "Ricollega l'account IPTV per aprire la serie", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Toast.makeText(this, "Caricamento episodi…", Toast.LENGTH_SHORT).show();
+        new Thread(() -> {
+            try {
+                String url=base+"/player_api.php?username="+enc(user)+"&password="+enc(pass)+"&action=get_series_info&series_id="+enc(series.contentId);
+                JSONObject root=new JSONObject(readUrl(url));
+                ArrayList<String> labels=new ArrayList<>();
+                ArrayList<String> urls=new ArrayList<>();
+                JSONObject eps=root.optJSONObject("episodes");
+                if(eps!=null){
+                    Iterator<String> seasons=eps.keys();
+                    while(seasons.hasNext()){
+                        String season=seasons.next();
+                        JSONArray arr=eps.optJSONArray(season); if(arr==null) continue;
+                        for(int i=0;i<arr.length();i++){
+                            JSONObject e=arr.optJSONObject(i); if(e==null) continue;
+                            String id=e.optString("id",""); if(id.isEmpty()) continue;
+                            String ext=e.optString("container_extension","mp4"); if(ext.isEmpty()) ext="mp4";
+                            String title="S"+season+" • Ep "+e.optString("episode_num",String.valueOf(i+1))+" • "+e.optString("title","Episodio");
+                            labels.add(title); urls.add(base+"/series/"+enc(user)+"/"+enc(pass)+"/"+id+"."+ext);
+                        }
+                    }
+                }
+                runOnUiThread(() -> {
+                    if(labels.isEmpty()){ Toast.makeText(this,"Nessun episodio disponibile",Toast.LENGTH_LONG).show(); return; }
+                    new android.app.AlertDialog.Builder(this).setTitle(series.name)
+                        .setItems(labels.toArray(new String[0]), (d,which) -> {
+                            Intent i=new Intent(this,PlayerActivity.class);
+                            i.putExtra("url",urls.get(which)); i.putExtra("name",series.name+" • "+labels.get(which));
+                            i.putExtra("type","SERIES"); startActivity(i);
+                        }).setNegativeButton("Chiudi",null).show();
+                });
+            } catch(Exception e) {
+                runOnUiThread(() -> Toast.makeText(this,"Errore episodi: "+cleanError(e),Toast.LENGTH_LONG).show());
+            }
+        }, "series-info").start();
+    }
+
+    private String readUrl(String url) throws Exception {
+        HttpURLConnection c=open(url);
+        int code=c.getResponseCode();
+        if(code<200||code>=300) throw new IOException("HTTP "+code);
+        String body=readLimited(c.getInputStream(),8_000_000);
+        c.disconnect(); return body;
     }
 
     private void show(Channel c) {
@@ -723,7 +930,7 @@ public class MainActivity extends Activity {
             Channel c=getItem(p);
             ((TextView)v.findViewById(R.id.channelIndex)).setText(String.valueOf(p+1));
             ((TextView)v.findViewById(R.id.channelName)).setText(c.name);
-            ((TextView)v.findViewById(R.id.channelGroup)).setText(c.group+(c.id.isEmpty()?"":" • "+c.id));
+            ((TextView)v.findViewById(R.id.channelGroup)).setText((c.type==ContentType.MOVIE?"FILM":c.type==ContentType.SERIES?"SERIE":"LIVE")+" • "+c.group);
             TextView f=v.findViewById(R.id.favorite); f.setText(fav(c.url)?"★":"☆"); f.setOnClickListener(x->toggle(c));
             return v;
         }
@@ -731,11 +938,15 @@ public class MainActivity extends Activity {
 
     static class PlayerResult { final List<Channel> channels; PlayerResult(List<Channel> c){channels=c;} }
 
+    enum ContentType { LIVE, MOVIE, SERIES, AI }
+
     static class Channel {
-        final String name,url,group,id,logo;
-        Channel(String n,String u,String g,String i,String l){
-            name=n==null||n.isEmpty()?"Canale senza nome":n; url=u;
+        final String name,url,group,id,logo,contentId,extension;
+        final ContentType type;
+        Channel(String n,String u,String g,String i,String l,ContentType t,String cid,String ext){
+            name=n==null||n.isEmpty()?"Contenuto senza nome":n; url=u;
             group=g==null||g.isEmpty()?"Senza gruppo":g; id=i==null?"":i; logo=l==null?"":l;
+            type=t==null?ContentType.LIVE:t; contentId=cid==null?"":cid; extension=ext==null?"":ext;
         }
     }
 }
