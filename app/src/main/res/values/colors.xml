@@ -1,12 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="bg">#F4F7FC</color>
-    <color name="surface">#FFFFFF</color>
-    <color name="ink">#172033</color>
-    <color name="muted">#78839A</color>
-    <color name="primary">#5B5CE2</color>
-    <color name="primary_dark">#4748C5</color>
-    <color name="accent">#6D7CFF</color>
-    <color name="line">#E3E8F2</color>
-    <color name="success">#1DAA72</color>
+    <color name="bg">#F4F7FC</color><color name="surface">#FFFFFF</color><color name="ink">#172033</color><color name="muted">#78839A</color>
+    <color name="primary">#5B5CE2</color><color name="primary_dark">#4748C5</color><color name="accent">#6D7CFF</color><color name="line">#E3E8F2</color><color name="success">#1DAA72</color>
 </resources>
