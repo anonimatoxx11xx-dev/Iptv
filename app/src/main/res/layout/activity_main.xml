@@ -1,173 +1,189 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@color/bg" android:fillViewport="true">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:paddingStart="18dp" android:paddingEnd="18dp" android:paddingTop="18dp" android:paddingBottom="30dp">
+    android:background="@color/bg">
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical">
+    <!-- LOGIN -->
+    <ScrollView android:id="@+id/loginPanel" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:fillViewport="true" android:clipToPadding="false">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:padding="24dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:gravity="center_vertical">
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="IPTV VIEWER" android:textColor="@color/ink" android:textSize="30sp" android:textStyle="bold"/>
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp" android:text="Il tuo centro TV, veloce e intelligente"
+                        android:textColor="@color/muted" android:textSize="14sp"/>
+                </LinearLayout>
+                <TextView android:layout_width="56dp" android:layout_height="56dp" android:gravity="center"
+                    android:text="TV" android:textColor="#FFFFFF" android:textSize="17sp" android:textStyle="bold"
+                    android:background="@drawable/bg_primary"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="22dp"
+                android:orientation="vertical" android:padding="22dp" android:background="@drawable/bg_hero">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="BENVENUTO" android:textColor="#D9DDFF" android:textSize="11sp" android:textStyle="bold"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                    android:text="Accedi alla tua TV" android:textColor="#FFFFFF" android:textSize="26sp" android:textStyle="bold"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="7dp"
+                    android:text="Inserisci le credenziali IPTV. Dopo l'accesso troverai Live, Film, Serie TV e IA in un'unica schermata."
+                    android:textColor="#E4E7FF" android:textSize="13sp"/>
+            </LinearLayout>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="22dp"
+                android:text="ACCESSO IPTV" android:textColor="@color/ink" android:textSize="16sp" android:textStyle="bold"/>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="10dp">
+                <EditText android:id="@+id/serverInput" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:background="@drawable/bg_input" android:hint="Server / IP" android:textColor="@color/ink"
+                    android:textColorHint="@color/muted" android:singleLine="true" android:inputType="textUri"/>
+                <Space android:layout_width="8dp" android:layout_height="1dp"/>
+                <EditText android:id="@+id/portInput" android:layout_width="86dp" android:layout_height="match_parent"
+                    android:background="@drawable/bg_input" android:hint="Porta" android:textColor="@color/ink"
+                    android:textColorHint="@color/muted" android:singleLine="true" android:inputType="number"/>
+            </LinearLayout>
+
+            <EditText android:id="@+id/usernameInput" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="9dp"
+                android:background="@drawable/bg_input" android:hint="Nome utente" android:textColor="@color/ink"
+                android:textColorHint="@color/muted" android:singleLine="true" android:inputType="text"/>
+            <EditText android:id="@+id/passwordInput" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="9dp"
+                android:background="@drawable/bg_input" android:hint="Password" android:textColor="@color/ink"
+                android:textColorHint="@color/muted" android:singleLine="true" android:inputType="textPassword"/>
+
+            <CheckBox android:id="@+id/saveCredentials" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Ricorda accesso" android:textColor="@color/muted" android:textSize="12sp"/>
+
+            <Button android:id="@+id/btnConnect" android:layout_width="match_parent" android:layout_height="54dp"
+                android:layout_marginTop="4dp" android:text="ACCEDI E CARICA LA TV" android:textAllCaps="false"
+                android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="15sp" android:background="@drawable/bg_primary"/>
+
+            <ProgressBar android:id="@+id/loading" android:layout_width="28dp" android:layout_height="28dp"
+                android:layout_gravity="center" android:layout_marginTop="14dp" android:visibility="gone"/>
+
+            <TextView android:id="@+id/heroStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="12dp" android:gravity="center" android:text="Nessun account collegato"
+                android:textColor="@color/muted" android:textSize="11sp"/>
+
+            <LinearLayout android:id="@+id/sourceLegacy" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="18dp" android:orientation="vertical" android:visibility="gone">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="50dp">
+                    <TextView android:id="@+id/modeFile" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                        android:gravity="center" android:text="FILE M3U" android:textColor="@color/muted" android:textStyle="bold"
+                        android:background="@drawable/bg_toggle" android:clickable="true" android:focusable="true"/>
+                    <Space android:layout_width="7dp" android:layout_height="1dp"/>
+                    <TextView android:id="@+id/modeIptv" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                        android:gravity="center" android:text="ACCESSO IPTV" android:textColor="@color/primary" android:textStyle="bold"
+                        android:background="@drawable/bg_toggle_selected" android:clickable="true" android:focusable="true"/>
+                </LinearLayout>
+                <LinearLayout android:id="@+id/filePanel" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="15dp">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Playlist locale"
+                        android:textColor="@color/ink" android:textSize="15sp" android:textStyle="bold"/>
+                    <Button android:id="@+id/btnOpen" android:layout_width="match_parent" android:layout_height="46dp" android:layout_marginTop="9dp"
+                        android:text="Scegli file M3U" android:textAllCaps="false" android:textColor="#FFFFFF"
+                        android:textStyle="bold" android:background="@drawable/bg_primary"/>
+                    <TextView android:id="@+id/fileName" android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp" android:text="Nessun file selezionato" android:textColor="@color/muted" android:textSize="11sp"/>
+                </LinearLayout>
+                <LinearLayout android:id="@+id/iptvPanel" android:layout_width="match_parent" android:layout_height="1dp"
+                    android:visibility="gone"/>
+                <LinearLayout android:id="@+id/credentialsSummary" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:visibility="gone">
+                    <TextView android:id="@+id/credentialSummaryText" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- MAIN APP: header stays fixed, only the content list scrolls -->
+    <LinearLayout android:id="@+id/appPanel" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:paddingTop="10dp" android:visibility="gone">
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingStart="20dp" android:paddingEnd="20dp"
+            android:gravity="center_vertical">
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="IPTV VIEWER" android:textColor="@color/ink" android:textSize="28sp" android:textStyle="bold"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="3dp"
-                    android:text="La tua TV. Live, film, serie e IA." android:textColor="@color/muted" android:textSize="13sp"/>
+                    android:text="IPTV VIEWER" android:textColor="@color/ink" android:textSize="23sp" android:textStyle="bold"/>
+                <TextView android:id="@+id/appSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp" android:text="La tua TV. Live, film, serie e IA."
+                    android:textColor="@color/muted" android:textSize="11sp"/>
             </LinearLayout>
-            <TextView android:layout_width="52dp" android:layout_height="52dp" android:gravity="center"
-                android:text="✦" android:textColor="#FFFFFF" android:textSize="22sp" android:textStyle="bold"
-                android:background="@drawable/bg_primary"/>
+            <TextView android:id="@+id/logoutButton" android:layout_width="72dp" android:layout_height="40dp" android:gravity="center"
+                android:text="ESCI" android:textColor="@color/primary" android:textSize="11sp" android:textStyle="bold"
+                android:background="@drawable/bg_toggle" android:clickable="true" android:focusable="true"/>
         </LinearLayout>
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="18dp"
-            android:orientation="vertical" android:padding="20dp" android:background="@drawable/bg_hero">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="12dp"
+            android:orientation="vertical" android:padding="17dp" android:background="@drawable/bg_hero">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="SMART IPTV" android:textColor="#C9CEFF" android:textSize="11sp" android:textStyle="bold"/>
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="7dp"
-                android:text="Tutto il tuo intrattenimento in un'unica app" android:textColor="#FFFFFF" android:textSize="23sp" android:textStyle="bold"/>
-            <TextView android:id="@+id/heroStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="9dp" android:text="Nessuna playlist collegata"
-                android:textColor="#E2E6FF" android:textSize="12sp"/>
-            <ProgressBar android:id="@+id/loading" android:layout_width="24dp" android:layout_height="24dp"
-                android:layout_marginTop="10dp" android:visibility="gone"/>
+                android:text="SMART IPTV" android:textColor="#D9DDFF" android:textSize="10sp" android:textStyle="bold"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp"
+                android:text="Tutto il tuo intrattenimento" android:textColor="#FFFFFF" android:textSize="21sp" android:textStyle="bold"/>
+            <TextView android:id="@+id/appAccountStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="6dp" android:text="Account collegato" android:textColor="#E4E7FF" android:textSize="11sp"/>
         </LinearLayout>
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp">
-            <LinearLayout android:layout_width="0dp" android:layout_height="72dp" android:layout_weight="1"
-                android:orientation="vertical" android:gravity="center_vertical" android:paddingStart="16dp" android:background="@drawable/bg_card">
-                <TextView android:id="@+id/resultCount" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="0" android:textColor="@color/primary" android:textSize="23sp" android:textStyle="bold"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="NELLA SEZIONE" android:textColor="@color/muted" android:textSize="9sp" android:textStyle="bold"/>
-            </LinearLayout>
-            <Space android:layout_width="10dp" android:layout_height="1dp"/>
-            <LinearLayout android:layout_width="0dp" android:layout_height="72dp" android:layout_weight="1"
-                android:orientation="vertical" android:gravity="center_vertical" android:paddingStart="16dp" android:background="@drawable/bg_card">
-                <TextView android:id="@+id/stats" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="0 contenuti" android:textColor="@color/ink" android:textSize="14sp" android:textStyle="bold"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="LIBRERIA IPTV" android:textColor="@color/muted" android:textSize="9sp" android:textStyle="bold"/>
-            </LinearLayout>
-        </LinearLayout>
-
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="20dp"
-            android:text="CONTENUTI" android:textColor="@color/ink" android:textSize="13sp" android:textStyle="bold"/>
-
-        <HorizontalScrollView android:layout_width="match_parent" android:layout_height="56dp" android:layout_marginTop="8dp"
-            android:scrollbars="none">
+        <HorizontalScrollView android:layout_width="match_parent" android:layout_height="52dp" android:scrollbars="none"
+            android:paddingStart="12dp" android:paddingEnd="12dp">
             <LinearLayout android:layout_width="wrap_content" android:layout_height="match_parent">
-                <TextView android:id="@+id/tabLive" android:layout_width="92dp" android:layout_height="match_parent"
+                <TextView android:id="@+id/tabLive" android:layout_width="88dp" android:layout_height="match_parent"
                     android:gravity="center" android:text="●  LIVE" android:textColor="@color/primary" android:textStyle="bold"
                     android:background="@drawable/bg_toggle_selected" android:clickable="true" android:focusable="true"/>
-                <TextView android:id="@+id/tabMovies" android:layout_width="92dp" android:layout_height="match_parent" android:layout_marginStart="7dp"
+                <TextView android:id="@+id/tabMovies" android:layout_width="88dp" android:layout_height="match_parent" android:layout_marginStart="7dp"
                     android:gravity="center" android:text="FILM" android:textColor="@color/muted" android:textStyle="bold"
                     android:background="@drawable/bg_toggle" android:clickable="true" android:focusable="true"/>
-                <TextView android:id="@+id/tabSeries" android:layout_width="92dp" android:layout_height="match_parent" android:layout_marginStart="7dp"
-                    android:gravity="center" android:text="SERIE" android:textColor="@color/muted" android:textStyle="bold"
+                <TextView android:id="@+id/tabSeries" android:layout_width="88dp" android:layout_height="match_parent" android:layout_marginStart="7dp"
+                    android:gravity="center" android:text="SERIE TV" android:textColor="@color/muted" android:textStyle="bold"
                     android:background="@drawable/bg_toggle" android:clickable="true" android:focusable="true"/>
-                <TextView android:id="@+id/tabAi" android:layout_width="92dp" android:layout_height="match_parent" android:layout_marginStart="7dp"
+                <TextView android:id="@+id/tabAi" android:layout_width="88dp" android:layout_height="match_parent" android:layout_marginStart="7dp"
                     android:gravity="center" android:text="✦  IA" android:textColor="@color/muted" android:textStyle="bold"
                     android:background="@drawable/bg_toggle" android:clickable="true" android:focusable="true"/>
             </LinearLayout>
         </HorizontalScrollView>
 
-        <LinearLayout android:id="@+id/aiPanel" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="10dp" android:orientation="vertical" android:padding="18dp"
-            android:background="@drawable/bg_ai" android:visibility="gone">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="✦  ASSISTENTE IA" android:textColor="@color/primary" android:textSize="12sp" android:textStyle="bold"/>
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="7dp"
-                android:text="Dimmi cosa vuoi guardare e cerco nella tua libreria." android:textColor="@color/ink" android:textSize="19sp" android:textStyle="bold"/>
-            <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="14dp">
-                <EditText android:id="@+id/aiQuery" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
-                    android:background="@drawable/bg_input" android:hint="Es. sport, news, film, serie..."
-                    android:textColor="@color/ink" android:textColorHint="@color/muted" android:singleLine="true" android:paddingStart="14dp" android:paddingEnd="14dp"/>
-                <Button android:id="@+id/aiAsk" android:layout_width="72dp" android:layout_height="match_parent" android:layout_marginStart="7dp"
-                    android:text="CERCA" android:textSize="10sp" android:textAllCaps="false" android:textColor="#FFFFFF" android:textStyle="bold"
-                    android:background="@drawable/bg_primary"/>
-            </LinearLayout>
-            <TextView android:id="@+id/aiAnswer" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="15dp" android:textColor="@color/ink" android:textSize="13sp"
-                android:lineSpacingExtra="3dp"/>
-        </LinearLayout>
+        <FrameLayout android:id="@+id/contentArea" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:layout_marginTop="8dp">
 
-        <LinearLayout android:id="@+id/contentPanel" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="vertical">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="17dp"
-                android:text="SORGENTE" android:textColor="@color/ink" android:textSize="13sp" android:textStyle="bold"/>
-
-            <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="8dp">
-                <TextView android:id="@+id/modeFile" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
-                    android:gravity="center" android:text="FILE M3U" android:textColor="@color/primary" android:textStyle="bold"
-                    android:background="@drawable/bg_toggle_selected" android:clickable="true" android:focusable="true"/>
-                <Space android:layout_width="7dp" android:layout_height="1dp"/>
-                <TextView android:id="@+id/modeIptv" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
-                    android:gravity="center" android:text="ACCESSO IPTV" android:textColor="@color/muted" android:textStyle="bold"
-                    android:background="@drawable/bg_toggle" android:clickable="true" android:focusable="true"/>
-            </LinearLayout>
-
-            <LinearLayout android:id="@+id/filePanel" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="9dp" android:background="@drawable/bg_card" android:orientation="vertical" android:padding="16dp">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Playlist locale"
-                    android:textColor="@color/ink" android:textSize="16sp" android:textStyle="bold"/>
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
-                    android:text="Importa .m3u o .m3u8 dal dispositivo." android:textColor="@color/muted" android:textSize="12sp"/>
-                <Button android:id="@+id/btnOpen" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginTop="11dp"
-                    android:text="＋  Scegli file M3U" android:textAllCaps="false" android:textColor="#FFFFFF"
-                    android:textStyle="bold" android:background="@drawable/bg_primary"/>
-                <TextView android:id="@+id/fileName" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginTop="7dp" android:text="Nessun file selezionato" android:textColor="@color/muted" android:textSize="11sp"/>
-            </LinearLayout>
-
-            <LinearLayout android:id="@+id/iptvPanel" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="9dp" android:background="@drawable/bg_card" android:orientation="vertical"
-                android:padding="16dp" android:visibility="gone">
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Accesso Xtream"
-                    android:textColor="@color/ink" android:textSize="17sp" android:textStyle="bold"/>
-                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
-                    android:text="Server, porta, utente e password. La porta può essere rilevata automaticamente."
-                    android:textColor="@color/muted" android:textSize="11sp"/>
-                <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="12dp">
-                    <EditText android:id="@+id/serverInput" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
-                        android:background="@drawable/bg_input" android:hint="Server / IP" android:textColor="@color/ink"
-                        android:textColorHint="@color/muted" android:singleLine="true" android:inputType="textUri"/>
-                    <Space android:layout_width="7dp" android:layout_height="1dp"/>
-                    <EditText android:id="@+id/portInput" android:layout_width="82dp" android:layout_height="match_parent"
-                        android:background="@drawable/bg_input" android:hint="Porta" android:textColor="@color/ink"
-                        android:textColorHint="@color/muted" android:singleLine="true" android:inputType="number"/>
+            <LinearLayout android:id="@+id/contentPanel" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:orientation="vertical" android:paddingStart="12dp" android:paddingEnd="12dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="50dp">
+                    <EditText android:id="@+id/search" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                        android:background="@drawable/bg_input" android:hint="⌕  Cerca..." android:textColor="@color/ink"
+                        android:textColorHint="@color/muted" android:singleLine="true" android:paddingStart="14dp"/>
+                    <Spinner android:id="@+id/groupSpinner" android:layout_width="105dp" android:layout_height="match_parent"
+                        android:layout_marginStart="7dp" android:background="@drawable/bg_input" android:paddingStart="5dp" android:paddingEnd="5dp"/>
                 </LinearLayout>
-                <EditText android:id="@+id/usernameInput" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_input" android:hint="Nome utente" android:textColor="@color/ink"
-                    android:textColorHint="@color/muted" android:singleLine="true" android:inputType="text"/>
-                <EditText android:id="@+id/passwordInput" android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="8dp"
-                    android:background="@drawable/bg_input" android:hint="Password" android:textColor="@color/ink"
-                    android:textColorHint="@color/muted" android:singleLine="true" android:inputType="textPassword"/>
-                <CheckBox android:id="@+id/saveCredentials" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="Ricorda accesso" android:textColor="@color/muted" android:textSize="11sp"/>
-                <Button android:id="@+id/btnConnect" android:layout_width="match_parent" android:layout_height="50dp"
-                    android:layout_marginTop="3dp" android:text="Connetti e carica tutto" android:textAllCaps="false"
-                    android:textColor="#FFFFFF" android:textStyle="bold" android:background="@drawable/bg_primary"/>
+                <TextView android:id="@+id/contentTitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp" android:text="LIVE TV" android:textColor="@color/ink" android:textSize="16sp" android:textStyle="bold"/>
+                <ListView android:id="@+id/channelList" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+                    android:layout_marginTop="6dp" android:divider="@null" android:dividerHeight="0dp" android:clipToPadding="false"
+                    android:paddingBottom="12dp"/>
             </LinearLayout>
 
-            <LinearLayout android:id="@+id/credentialsSummary" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="9dp" android:background="@drawable/bg_card" android:orientation="vertical"
-                android:padding="14dp" android:visibility="gone">
+            <LinearLayout android:id="@+id/aiPanel" android:layout_width="match_parent" android:layout_height="match_parent"
+                android:orientation="vertical" android:padding="18dp" android:background="@drawable/bg_ai" android:visibility="gone">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="ACCOUNT COLLEGATO" android:textColor="@color/success" android:textSize="10sp" android:textStyle="bold"/>
-                <TextView android:id="@+id/credentialSummaryText" android:layout_width="match_parent" android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp" android:textColor="@color/muted" android:textSize="11sp"/>
+                    android:text="✦  ASSISTENTE IA" android:textColor="@color/primary" android:textSize="12sp" android:textStyle="bold"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                    android:text="Cosa vuoi guardare?" android:textColor="@color/ink" android:textSize="23sp" android:textStyle="bold"/>
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp"
+                    android:text="Cerca nella tua libreria IPTV con una richiesta naturale." android:textColor="@color/muted" android:textSize="12sp"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="16dp">
+                    <EditText android:id="@+id/aiQuery" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                        android:background="@drawable/bg_input" android:hint="Es. sport, news, film..." android:textColor="@color/ink"
+                        android:textColorHint="@color/muted" android:singleLine="true" android:paddingStart="14dp"/>
+                    <Button android:id="@+id/aiAsk" android:layout_width="78dp" android:layout_height="match_parent" android:layout_marginStart="7dp"
+                        android:text="CERCA" android:textAllCaps="false" android:textSize="10sp" android:textColor="#FFFFFF"
+                        android:textStyle="bold" android:background="@drawable/bg_primary"/>
+                </LinearLayout>
+                <TextView android:id="@+id/aiAnswer" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp" android:textColor="@color/ink" android:textSize="13sp" android:lineSpacingExtra="3dp"/>
             </LinearLayout>
-
-            <LinearLayout android:id="@+id/contentControls" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:orientation="vertical">
-                <EditText android:id="@+id/search" android:layout_width="match_parent" android:layout_height="50dp" android:layout_marginTop="15dp"
-                    android:background="@drawable/bg_input" android:hint="⌕  Cerca contenuto o categoria..."
-                    android:textColor="@color/ink" android:textColorHint="@color/muted" android:singleLine="true" android:paddingStart="15dp" android:paddingEnd="15dp"/>
-                <Spinner android:id="@+id/groupSpinner" android:layout_width="match_parent" android:layout_height="48dp"
-                    android:layout_marginTop="7dp" android:background="@drawable/bg_input" android:paddingStart="10dp" android:paddingEnd="10dp"/>
-                <TextView android:id="@+id/contentTitle" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="17dp"
-                    android:text="LIVE TV" android:textColor="@color/ink" android:textSize="17sp" android:textStyle="bold"/>
-                <ListView android:id="@+id/channelList" android:layout_width="match_parent" android:layout_height="620dp"
-                    android:layout_marginTop="8dp" android:divider="@null" android:dividerHeight="0dp" android:clipToPadding="false"/>
-            </LinearLayout>
-        </LinearLayout>
+        </FrameLayout>
     </LinearLayout>
-</ScrollView>
+</FrameLayout>
