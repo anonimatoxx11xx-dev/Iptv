@@ -1,0 +1,1 @@
+# M3U Viewer - no custom ProGuard rules required.
