@@ -724,10 +724,6 @@ public class MainActivity extends Activity {
         }, "iptv-m3u").start();
     }
 
-    private static final int VOD_PAGE_SIZE = 300;
-    private static final int MAX_VOD_ITEMS = 8000;
-    private static final int MAX_SERIES_ITEMS = 5000;
-
     private static final int CATALOG_PAGE_SIZE = 300;
     private static final int MAX_VOD_ITEMS = 10000;
     private static final int MAX_SERIES_ITEMS = 6000;
