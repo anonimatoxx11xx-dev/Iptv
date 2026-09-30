@@ -41,7 +41,10 @@ async function login(){
   });
 
   const cookie=cookieFrom(response);
-  if(!cookie) throw new Error(`Login reseller non riuscito: nessun cookie di sessione ricevuto (HTTP ${response.status}).`);
+  if(!cookie){
+    const details=(await response.text()).replace(/(password|pass|pwd)=([^&\s]+)/gi,'$1=[redacted]').slice(0,300);
+    throw new Error(`Login reseller non riuscito: HTTP ${response.status}. ${details}`);
+  }
   return cookie;
 }
 
