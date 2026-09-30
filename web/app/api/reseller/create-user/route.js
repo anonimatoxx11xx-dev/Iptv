@@ -28,14 +28,20 @@ async function login(){
   const body=new URLSearchParams({referrer:'',username,password});
   const response=await fetch(PANEL + '/login.php',{
     method:'POST',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    headers:{
+      'Content-Type':'application/x-www-form-urlencoded',
+      'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36',
+      'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Origin':PANEL,
+      'Referer':PANEL + '/login.php'
+    },
     body,
     redirect:'manual',
     cache:'no-store'
   });
 
   const cookie=cookieFrom(response);
-  if(!cookie) throw new Error('Login reseller non riuscito: nessun cookie di sessione ricevuto.');
+  if(!cookie) throw new Error(`Login reseller non riuscito: nessun cookie di sessione ricevuto (HTTP ${response.status}).`);
   return cookie;
 }
 
@@ -82,6 +88,9 @@ export async function POST(request){
       headers:{
         'Content-Type':'application/x-www-form-urlencoded',
         'Cookie':cookie,
+        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36',
+        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Origin':PANEL,
         'Referer':PANEL + '/user_reseller.php'
       },
       body:form,
