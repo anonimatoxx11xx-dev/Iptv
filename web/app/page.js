@@ -62,7 +62,8 @@ export default function Page(){
      setCreatedCredentials({name,username:data.username,password:data.password,months,expires:data.expires,m3uUrl:data.m3uUrl});
      notify('Linea creata realmente sul reseller');
    }catch(error){notify(error.message||'Errore nella creazione della linea');}
- } const addCredits=(id,amount=1)=>{
+ };
+ const addCredits=(id,amount=1)=>{
    if(adminCredits<amount){notify('Crediti amministratore insufficienti');return;}
    setAdminCredits(v=>v-amount);
    setUsers(v=>v.map(u=>{
