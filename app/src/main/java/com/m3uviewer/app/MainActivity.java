@@ -843,6 +843,7 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> {
                     if (heroStatus != null) heroStatus.setText("Xtream • Live + Film + Serie TV caricati");
                     if (stats != null) stats.setText(all.size() + " contenuti • " + favCount() + " preferiti");
+                    if (appPanel != null && appPanel.getVisibility() == View.VISIBLE) showHome();
                 });
             } catch (Exception e) {
                 runOnUiThread(() -> {
