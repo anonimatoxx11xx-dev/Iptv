@@ -210,6 +210,8 @@ public class MainActivity extends Activity {
         int movies = countType(ContentType.MOVIE);
         int series = countType(ContentType.SERIES);
         if (appAccountStatus != null) appAccountStatus.setText("Account collegato • " + live + " Live • " + movies + " Film • " + series + " Serie");
+        TextView liveBadge = findViewById(R.id.homeLiveCount);
+        if (liveBadge != null) liveBadge.setText(live > 0 ? live + " LIVE" : "LIVE");
         TextView hLive = findViewById(R.id.homeLive);
         TextView hMovies = findViewById(R.id.homeMovies);
         TextView hSeries = findViewById(R.id.homeSeries);
@@ -773,6 +775,7 @@ public class MainActivity extends Activity {
                     filter();
                     if (stats != null) stats.setText(all.size() + " contenuti • " + favCount() + " preferiti");
                     if (heroStatus != null) heroStatus.setText("Account collegato • " + all.size() + " contenuti • Xtream");
+                    if (appPanel != null && appPanel.getVisibility() == View.VISIBLE) showHome();
                 });
             }
 
