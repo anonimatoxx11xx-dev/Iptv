@@ -39,8 +39,9 @@ export default function Page(){
  const [newUser,setNewUser]=useState({name:'',months:1});
  const filteredUsers=useMemo(()=>users.filter(u=>(u.name+' '+u.username).toLowerCase().includes(query.toLowerCase())),[users,query]);
  const notify=(m)=>{setToast(m);setTimeout(()=>setToast(''),2200)};
- const generateUsername=()=>{let value='usr'+Math.random().toString(36).slice(2,7)+Date.now().toString().slice(-3);return value.toLowerCase()};
- const generatePassword=()=>{const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';let out='';for(let i=0;i<12;i++)out+=chars[Math.floor(Math.random()*chars.length)];return out};
+ const randomChars=(chars,length)=>{const bytes=new Uint32Array(length);crypto.getRandomValues(bytes);let out='';for(let i=0;i<length;i++)out+=chars[bytes[i]%chars.length];return out};
+ const generateUsername=()=>{let value;do{value='usr'+randomChars('abcdefghijkmnopqrstuvwxyz23456789',7)}while(users.some(u=>u.username===value));return value};
+ const generatePassword=()=>randomChars('ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%',14);
  const createUser=()=>{
    const months=Number(newUser.months);
    if(!newUser.name||![1,3,12].includes(months))return;
@@ -55,7 +56,24 @@ export default function Page(){
  };
  const addCredits=(id,amount=1)=>{
    if(adminCredits<amount){notify('Crediti amministratore insufficienti');return;}
-   setAdminCredits(v=>v-amount);setUsers(v=>v.map(u=>u.id===id?{...u,credits:u.credits+amount}:u));notify('Crediti assegnati');
+   setAdminCredits(v=>v-amount);
+   setUsers(v=>v.map(u=>{
+     if(u.id!==id)return u;
+     const base=new Date();
+     const parts=u.expires?.split('/').map(Number);
+     if(parts?.length===3)base.setFullYear(parts[2],parts[1]-1,parts[0]);
+     else base.setTime(Date.now());
+     base.setMonth(base.getMonth()+amount);
+     return {...u,credits:u.credits+amount,expires:base.toLocaleDateString('it-IT'),status:'Attiva'};
+   }));
+   setLines(v=>v.map(l=>{
+     if(l.id!==id)return l;
+     const u=users.find(x=>x.id===id); const parts=u?.expires?.split('/').map(Number); const base=new Date();
+     if(parts?.length===3)base.setFullYear(parts[2],parts[1]-1,parts[0]); else base.setTime(Date.now());
+     base.setMonth(base.getMonth()+amount);
+     return {...l,expires:base.toLocaleDateString('it-IT'),status:'Attiva'};
+   }));
+   notify('Crediti assegnati e scadenza aggiornata');
  };
  const toggleUser=(id)=>{setUsers(v=>v.map(u=>u.id===id?{...u,status:u.status==='Attiva'?'Bloccata':'Attiva'}:u));notify('Stato aggiornato')};
  const renewLine=(id)=>{setLines(v=>v.map(l=>l.id===id?{...l,status:'Attiva'}:l));notify('Linea rinnovata')};
