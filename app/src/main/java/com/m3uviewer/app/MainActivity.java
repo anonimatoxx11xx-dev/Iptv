@@ -37,7 +37,7 @@ public class MainActivity extends Activity {
     private TextView modeFile, modeIptv;
     private ProgressBar loading;
     private Button connectButton;
-    private TextView tabLive, tabMovies, tabSeries, tabAi, logoutButton, appAccountStatus;
+    private TextView tabLive, tabMovies, tabSeries, tabAi, tabHome, logoutButton, appAccountStatus, homeTopButton;
     private LinearLayout aiPanel, contentPanel, homePanel;
     private View navTabs;
     private FrameLayout contentArea;
@@ -113,6 +113,8 @@ public class MainActivity extends Activity {
         loginPanel = findViewById(R.id.loginPanel);
         appPanel = findViewById(R.id.appPanel);
         logoutButton = findViewById(R.id.logoutButton);
+        homeTopButton = findViewById(R.id.homeTopButton);
+        tabHome = findViewById(R.id.tabHome);
         appAccountStatus = findViewById(R.id.appAccountStatus);
         logoutButton.setOnClickListener(v -> showLogin());
         modeFile = findViewById(R.id.modeFile);
@@ -184,6 +186,8 @@ public class MainActivity extends Activity {
         tabMovies.setOnClickListener(v -> selectType(ContentType.MOVIE));
         tabSeries.setOnClickListener(v -> selectType(ContentType.SERIES));
         tabAi.setOnClickListener(v -> selectType(ContentType.AI));
+        tabHome.setOnClickListener(v -> showHome());
+        homeTopButton.setOnClickListener(v -> showHome());
 
         findViewById(R.id.homeLive).setOnClickListener(v -> selectType(ContentType.LIVE));
         findViewById(R.id.homeGuide).setOnClickListener(v -> selectType(ContentType.LIVE));
@@ -202,7 +206,19 @@ public class MainActivity extends Activity {
         if (homePanel != null) homePanel.setVisibility(View.VISIBLE);
         if (navTabs != null) navTabs.setVisibility(View.GONE);
         if (contentArea != null) contentArea.setVisibility(View.GONE);
-        if (appAccountStatus != null) appAccountStatus.setText("Account collegato • " + countType(ContentType.LIVE) + " canali Live");
+
+        int live = countType(ContentType.LIVE);
+        int movies = countType(ContentType.MOVIE);
+        int series = countType(ContentType.SERIES);
+        if (appAccountStatus != null) appAccountStatus.setText("Account collegato • " + live + " Live • " + movies + " Film • " + series + " Serie");
+        TextView hLive = findViewById(R.id.homeLive);
+        TextView hMovies = findViewById(R.id.homeMovies);
+        TextView hSeries = findViewById(R.id.homeSeries);
+        if (hLive != null) hLive.setText("●\nLIVE TV\n\n" + live + " canali in diretta");
+        if (hMovies != null) hMovies.setText("▶\nFILM\n\n" + (movies == 0 ? "Catalogo VOD" : movies + " film disponibili"));
+        if (hSeries != null) hSeries.setText("▣\nSERIE TV\n\n" + (series == 0 ? "Serie ed episodi" : series + " serie disponibili"));
+        if (tabHome != null) setTabState(tabHome, true);
+        setTabState(tabLive, false); setTabState(tabMovies, false); setTabState(tabSeries, false); setTabState(tabAi, false);
     }
 
     private void showFavorites() {
@@ -241,6 +257,7 @@ public class MainActivity extends Activity {
     }
 
     private void setTabState(TextView v, boolean selected) {
+        if (v == null) return;
         v.setBackgroundResource(selected ? R.drawable.bg_toggle_selected : R.drawable.bg_toggle);
         v.setTextColor(selected ? getColor(R.color.primary) : getColor(R.color.muted));
     }
