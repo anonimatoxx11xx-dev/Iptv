@@ -38,7 +38,8 @@ public class MainActivity extends Activity {
     private ProgressBar loading;
     private Button connectButton;
     private TextView tabLive, tabMovies, tabSeries, tabAi, logoutButton, appAccountStatus;
-    private LinearLayout aiPanel, contentPanel;
+    private LinearLayout aiPanel, contentPanel, homePanel;
+    private FrameLayout contentArea;
     private EditText aiQuery;
     private TextView aiAnswer, contentTitle;
     private String selected = "Tutti";
@@ -122,6 +123,8 @@ public class MainActivity extends Activity {
         tabSeries = findViewById(R.id.tabSeries);
         tabAi = findViewById(R.id.tabAi);
         aiPanel = findViewById(R.id.aiPanel);
+        homePanel = findViewById(R.id.homePanel);
+        contentArea = findViewById(R.id.contentArea);
         contentPanel = findViewById(R.id.contentPanel);
         aiQuery = findViewById(R.id.aiQuery);
         aiAnswer = findViewById(R.id.aiAnswer);
@@ -179,13 +182,44 @@ public class MainActivity extends Activity {
         tabMovies.setOnClickListener(v -> selectType(ContentType.MOVIE));
         tabSeries.setOnClickListener(v -> selectType(ContentType.SERIES));
         tabAi.setOnClickListener(v -> selectType(ContentType.AI));
+
+        findViewById(R.id.homeLive).setOnClickListener(v -> selectType(ContentType.LIVE));
+        findViewById(R.id.homeGuide).setOnClickListener(v -> selectType(ContentType.LIVE));
+        findViewById(R.id.homeMovies).setOnClickListener(v -> selectType(ContentType.MOVIE));
+        findViewById(R.id.homeSeries).setOnClickListener(v -> selectType(ContentType.SERIES));
+        findViewById(R.id.homeAi).setOnClickListener(v -> selectType(ContentType.AI));
+        findViewById(R.id.homeFavorites).setOnClickListener(v -> showFavorites());
+        findViewById(R.id.homeSettings).setOnClickListener(v ->
+                Toast.makeText(this, "Impostazioni disponibili a breve", Toast.LENGTH_SHORT).show());
+
         aiQuery.setOnEditorActionListener((v, actionId, event) -> { runAi(); return true; });
         findViewById(R.id.aiAsk).setOnClickListener(v -> runAi());
-        selectType(ContentType.LIVE);
+    }
+
+    private void showHome() {
+        if (homePanel != null) homePanel.setVisibility(View.VISIBLE);
+        if (contentArea != null) contentArea.setVisibility(View.GONE);
+        if (appAccountStatus != null) appAccountStatus.setText("Account collegato • " + countType(ContentType.LIVE) + " canali Live");
+    }
+
+    private void showFavorites() {
+        if (homePanel != null) homePanel.setVisibility(View.GONE);
+        if (contentArea != null) contentArea.setVisibility(View.VISIBLE);
+        if (contentPanel != null) contentPanel.setVisibility(View.VISIBLE);
+        if (aiPanel != null) aiPanel.setVisibility(View.GONE);
+        contentTitle.setText("PREFERITI");
+        setTabState(tabLive, false); setTabState(tabMovies, false); setTabState(tabSeries, false); setTabState(tabAi, false);
+        filtered.clear();
+        for (Channel c : all) if (isFavorite(c)) filtered.add(c);
+        matchingCount = filtered.size();
+        adapter.notifyDataSetChanged();
+        if (resultCount != null) resultCount.setText(String.valueOf(matchingCount));
     }
 
     private void selectType(ContentType type) {
         currentType = type;
+        if (homePanel != null) homePanel.setVisibility(View.GONE);
+        if (contentArea != null) contentArea.setVisibility(View.VISIBLE);
         boolean ai = type == ContentType.AI;
         contentPanel.setVisibility(ai ? View.GONE : View.VISIBLE);
         aiPanel.setVisibility(ai ? View.VISIBLE : View.GONE);
@@ -985,11 +1019,13 @@ public class MainActivity extends Activity {
         if (loginPanel != null) loginPanel.setVisibility(View.GONE);
         if (appPanel != null) appPanel.setVisibility(View.VISIBLE);
         if (appAccountStatus != null) appAccountStatus.setText(status);
-        selectType(ContentType.LIVE);
+        showHome();
     }
 
     private void showLogin() {
         if (appPanel != null) appPanel.setVisibility(View.GONE);
+        if (homePanel != null) homePanel.setVisibility(View.GONE);
+        if (contentArea != null) contentArea.setVisibility(View.GONE);
         if (loginPanel != null) loginPanel.setVisibility(View.VISIBLE);
         if (heroStatus != null) heroStatus.setText("Inserisci le credenziali per entrare");
         setLoading(false);
