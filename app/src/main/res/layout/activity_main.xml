@@ -100,17 +100,17 @@
         </LinearLayout>
     </ScrollView>
 
-    <!-- MAIN APP: header stays fixed, only the content list scrolls -->
+    <!-- MAIN APP -->
     <LinearLayout android:id="@+id/appPanel" android:layout_width="match_parent" android:layout_height="match_parent"
-        android:orientation="vertical" android:paddingTop="10dp" android:visibility="gone">
+        android:orientation="vertical" android:paddingTop="8dp" android:visibility="gone">
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingStart="20dp" android:paddingEnd="20dp"
             android:gravity="center_vertical">
             <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="IPTV VIEWER" android:textColor="@color/ink" android:textSize="23sp" android:textStyle="bold"/>
+                    android:text="IPTV VIEWER" android:textColor="@color/ink" android:textSize="25sp" android:textStyle="bold"/>
                 <TextView android:id="@+id/appSubtitle" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp" android:text="La tua TV. Live, film, serie e IA."
+                    android:layout_marginTop="1dp" android:text="La tua Smart TV personale"
                     android:textColor="@color/muted" android:textSize="11sp"/>
             </LinearLayout>
             <TextView android:id="@+id/logoutButton" android:layout_width="72dp" android:layout_height="40dp" android:gravity="center"
@@ -118,79 +118,59 @@
                 android:background="@drawable/bg_toggle" android:clickable="true" android:focusable="true"/>
         </LinearLayout>
 
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="12dp"
-            android:orientation="vertical" android:padding="17dp" android:background="@drawable/bg_hero">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp" android:layout_marginTop="12dp" android:padding="18dp" android:orientation="vertical"
+            android:background="@drawable/bg_hero">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="SMART IPTV" android:textColor="#D9DDFF" android:textSize="10sp" android:textStyle="bold"/>
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp"
-                android:text="Tutto il tuo intrattenimento" android:textColor="#FFFFFF" android:textSize="21sp" android:textStyle="bold"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="3dp"
+                android:text="Tutto il tuo intrattenimento" android:textColor="#FFFFFF" android:textSize="22sp" android:textStyle="bold"/>
             <TextView android:id="@+id/appAccountStatus" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="6dp" android:text="Account collegato" android:textColor="#E4E7FF" android:textSize="11sp"/>
+                android:layout_marginTop="5dp" android:text="Account collegato" android:textColor="#E4E7FF" android:textSize="11sp"/>
         </LinearLayout>
 
-        <LinearLayout android:id="@+id/homePanel" android:layout_width="match_parent" android:layout_height="0dp"
-            android:layout_weight="1" android:orientation="vertical" android:paddingStart="20dp" android:paddingEnd="20dp"
-            android:paddingTop="4dp" android:paddingBottom="18dp">
+        <!-- SMART TV HOME -->
+        <LinearLayout android:id="@+id/homePanel" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:orientation="vertical" android:paddingStart="20dp" android:paddingEnd="20dp" android:paddingTop="14dp" android:paddingBottom="10dp">
 
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="HOME" android:textColor="@color/primary" android:textSize="11sp" android:textStyle="bold"/>
-
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4dp"
-                android:text="Cosa vuoi guardare?" android:textColor="@color/ink" android:textSize="25sp" android:textStyle="bold"/>
-
-            <TextView android:id="@+id/homeSummary" android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:layout_marginTop="3dp" android:text="La tua TV, tutto in un unico posto"
-                android:textColor="@color/muted" android:textSize="12sp"/>
-
-            <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-                android:layout_marginTop="14dp" android:orientation="vertical">
-
-                <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
-                    <TextView android:id="@+id/homeLive" android:layout_width="0dp" android:layout_height="match_parent"
-                        android:layout_weight="1" android:layout_marginEnd="6dp" android:gravity="bottom|start"
-                        android:padding="18dp" android:text="●  LIVE TV\n\nCanali in diretta\n2078 canali"
-                        android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="bold"
-                        android:background="@drawable/bg_hero" android:clickable="true" android:focusable="true"/>
-                    <TextView android:id="@+id/homeGuide" android:layout_width="0dp" android:layout_height="match_parent"
-                        android:layout_weight="1" android:layout_marginStart="6dp" android:gravity="bottom|start"
-                        android:padding="18dp" android:text="▤  TV GUIDE\n\nProgrammi e orari\nScopri cosa c'è ora"
-                        android:textColor="@color/ink" android:textSize="15sp" android:textStyle="bold"
-                        android:background="@drawable/bg_card" android:clickable="true" android:focusable="true"/>
-                </LinearLayout>
-
-                <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-                    android:layout_marginTop="12dp">
-                    <TextView android:id="@+id/homeMovies" android:layout_width="0dp" android:layout_height="match_parent"
-                        android:layout_weight="1" android:layout_marginEnd="6dp" android:gravity="bottom|start"
-                        android:padding="18dp" android:text="▶  FILM\n\nCinema e VOD\nTutti i tuoi film"
-                        android:textColor="@color/ink" android:textSize="15sp" android:textStyle="bold"
-                        android:background="@drawable/bg_card" android:clickable="true" android:focusable="true"/>
-                    <TextView android:id="@+id/homeSeries" android:layout_width="0dp" android:layout_height="match_parent"
-                        android:layout_weight="1" android:layout_marginStart="6dp" android:gravity="bottom|start"
-                        android:padding="18dp" android:text="▣  SERIE TV\n\nSerie ed episodi\nContinua la visione"
-                        android:textColor="@color/ink" android:textSize="15sp" android:textStyle="bold"
-                        android:background="@drawable/bg_card" android:clickable="true" android:focusable="true"/>
-                </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+                <TextView android:id="@+id/homeLive" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:layout_marginEnd="6dp" android:gravity="bottom|start" android:padding="20dp"
+                    android:text="●\nLIVE TV\n\nCanali in diretta" android:textColor="#FFFFFF" android:textSize="19sp" android:textStyle="bold"
+                    android:background="@drawable/bg_hero" android:clickable="true" android:focusable="true"/>
+                <TextView android:id="@+id/homeGuide" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:layout_marginStart="6dp" android:gravity="bottom|start" android:padding="20dp"
+                    android:text="▤\nTV GUIDE\n\nProgrammi e orari" android:textColor="@color/ink" android:textSize="18sp" android:textStyle="bold"
+                    android:background="@drawable/bg_card" android:clickable="true" android:focusable="true"/>
             </LinearLayout>
 
-            <LinearLayout android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginTop="12dp">
-                <TextView android:id="@+id/homeFavorites" android:layout_width="0dp" android:layout_height="match_parent"
-                    android:layout_weight="1" android:gravity="center" android:text="☆  PREFERITI"
-                    android:textColor="@color/muted" android:textSize="12sp" android:textStyle="bold"
+            <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:layout_marginTop="12dp">
+                <TextView android:id="@+id/homeMovies" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:layout_marginEnd="6dp" android:gravity="bottom|start" android:padding="20dp"
+                    android:text="▶\nFILM\n\nCinema e VOD" android:textColor="@color/ink" android:textSize="18sp" android:textStyle="bold"
+                    android:background="@drawable/bg_card" android:clickable="true" android:focusable="true"/>
+                <TextView android:id="@+id/homeSeries" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:layout_marginStart="6dp" android:gravity="bottom|start" android:padding="20dp"
+                    android:text="▣\nSERIE TV\n\nSerie ed episodi" android:textColor="@color/ink" android:textSize="18sp" android:textStyle="bold"
+                    android:background="@drawable/bg_card" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="52dp" android:layout_marginTop="12dp">
+                <TextView android:id="@+id/homeFavorites" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:gravity="center" android:text="☆  PREFERITI" android:textColor="@color/muted" android:textSize="11sp" android:textStyle="bold"
                     android:background="@drawable/bg_toggle" android:clickable="true" android:focusable="true"/>
-                <TextView android:id="@+id/homeAi" android:layout_width="0dp" android:layout_height="match_parent"
-                    android:layout_weight="1" android:layout_marginStart="8dp" android:gravity="center"
-                    android:text="✦  IA" android:textColor="@color/muted" android:textSize="12sp" android:textStyle="bold"
+                <TextView android:id="@+id/homeAi" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:layout_marginStart="8dp" android:gravity="center" android:text="✦  IA" android:textColor="@color/muted" android:textSize="11sp" android:textStyle="bold"
                     android:background="@drawable/bg_toggle" android:clickable="true" android:focusable="true"/>
-                <TextView android:id="@+id/homeSettings" android:layout_width="0dp" android:layout_height="match_parent"
-                    android:layout_weight="1" android:layout_marginStart="8dp" android:gravity="center"
-                    android:text="⚙  IMPOSTAZIONI" android:textColor="@color/muted" android:textSize="12sp" android:textStyle="bold"
+                <TextView android:id="@+id/homeSettings" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+                    android:layout_marginStart="8dp" android:gravity="center" android:text="⚙  IMPOSTAZIONI" android:textColor="@color/muted" android:textSize="11sp" android:textStyle="bold"
                     android:background="@drawable/bg_toggle" android:clickable="true" android:focusable="true"/>
             </LinearLayout>
         </LinearLayout>
 
-        <HorizontalScrollView android:layout_width="match_parent" android:layout_height="52dp" android:scrollbars="none"
-            android:paddingStart="12dp" android:paddingEnd="12dp">
+        <!-- CONTENT NAVIGATION -->
+        <HorizontalScrollView android:id="@+id/navTabs" android:layout_width="match_parent" android:layout_height="52dp" android:scrollbars="none"
+            android:paddingStart="12dp" android:paddingEnd="12dp" android:visibility="gone">
             <LinearLayout android:layout_width="wrap_content" android:layout_height="match_parent">
                 <TextView android:id="@+id/tabLive" android:layout_width="88dp" android:layout_height="match_parent"
                     android:gravity="center" android:text="●  LIVE" android:textColor="@color/primary" android:textStyle="bold"
