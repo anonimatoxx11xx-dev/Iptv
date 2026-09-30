@@ -716,141 +716,133 @@ public class MainActivity extends Activity {
         }, "iptv-m3u").start();
     }
 
+    private static final int VOD_PAGE_SIZE = 300;
+    private static final int MAX_VOD_ITEMS = 8000;
+    private static final int MAX_SERIES_ITEMS = 5000;
+
     private void loadVodAndSeriesAsync(String base, String user, String pass) {
-        new Thread(() -> {
-            List<Channel> extra = new ArrayList<>();
-            try {
-                JSONArray vodCats = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
-                        + "&password=" + enc(pass) + "&action=get_vod_categories");
-                Map<String,String> vodMap = new HashMap<>();
-                for (int i=0;i<vodCats.length();i++) {
-                    JSONObject o=vodCats.optJSONObject(i);
-                    if(o!=null) vodMap.put(o.optString("category_id",""), o.optString("category_name","Film"));
-                }
-                JSONArray vod = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
-                        + "&password=" + enc(pass) + "&action=get_vod_streams");
-                for(int i=0;i<vod.length();i++){
-                    JSONObject o=vod.optJSONObject(i); if(o==null) continue;
-                    String id=o.optString("stream_id",""); if(id.isEmpty()) continue;
-                    String n=o.optString("name","Film");
-                    String cat=vodMap.get(o.optString("category_id","")); if(cat==null||cat.isEmpty()) cat="Film";
-                    String logo=o.optString("stream_icon","");
-                    String ext=o.optString("container_extension","mp4"); if(ext.isEmpty()) ext="mp4";
-                    extra.add(new Channel(n,base+"/movie/"+enc(user)+"/"+enc(pass)+"/"+id+"."+ext,cat,id,logo,ContentType.MOVIE,id,ext));
-                }
-            } catch (Exception e) {
-                runOnUiThread(() -> {
-                    if (heroStatus != null) heroStatus.setText("Film: caricamento non disponibile • provo playlist completa…");
-                });
-            }
-
-            try {
-                JSONArray serCats = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
-                        + "&password=" + enc(pass) + "&action=get_series_categories");
-                Map<String,String> serMap = new HashMap<>();
-                for (int i=0;i<serCats.length();i++) {
-                    JSONObject o=serCats.optJSONObject(i);
-                    if(o!=null) serMap.put(o.optString("category_id",""), o.optString("category_name","Serie"));
-                }
-                JSONArray series = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
-                        + "&password=" + enc(pass) + "&action=get_series");
-                for(int i=0;i<series.length();i++){
-                    JSONObject o=series.optJSONObject(i); if(o==null) continue;
-                    String id=o.optString("series_id",""); if(id.isEmpty()) continue;
-                    String n=o.optString("name","Serie");
-                    String cat=serMap.get(o.optString("category_id","")); if(cat==null||cat.isEmpty()) cat="Serie";
-                    String logo=o.optString("cover","");
-                    extra.add(new Channel(n,"",cat,id,logo,ContentType.SERIES,id,""));
-                }
-            } catch (Exception e) {
-                runOnUiThread(() -> {
-                    if (heroStatus != null) heroStatus.setText("Serie TV: caricamento non disponibile • provo playlist completa…");
-                });
-            }
-
-            if (!extra.isEmpty()) {
-                runOnUiThread(() -> {
-                    all.addAll(extra);
-                    setupGroups();
-                    filter();
-                    if (stats != null) stats.setText(all.size() + " contenuti • " + favCount() + " preferiti");
-                    if (heroStatus != null) heroStatus.setText("Account collegato • " + all.size() + " contenuti • Xtream");
-                    if (appPanel != null && appPanel.getVisibility() == View.VISIBLE) showHome();
-                });
-            }
-
-            final boolean haveMovie = countType(ContentType.MOVIE) > 0;
-            final boolean haveSeries = countType(ContentType.SERIES) > 0;
-            if (!haveMovie || !haveSeries) loadM3uExtrasAsync(base, user, pass, haveMovie, haveSeries);
-        }, "iptv-vod-series").start();
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        pool.submit(() -> loadVodCatalog(base, user, pass));
+        pool.submit(() -> loadSeriesCatalog(base, user, pass));
+        pool.shutdown();
     }
 
-    private void loadM3uExtrasAsync(String base, String user, String pass, boolean haveMovie, boolean haveSeries) {
-        new Thread(() -> {
-            int movies = 0, series = 0;
-            try {
-                String url = base + "/get.php?username=" + enc(user) + "&password=" + enc(pass)
-                        + "&type=m3u_plus&output=mpegts";
-                HttpURLConnection c = open(url, 15000, 120000);
-                int code = c.getResponseCode();
-                if (code < 200 || code >= 300) throw new IOException("HTTP " + code);
-                BufferedReader br = new BufferedReader(new InputStreamReader(c.getInputStream(), StandardCharsets.UTF_8), 32768);
-                String line, n = null, g = "Senza gruppo", id = "", logo = "";
-                List<Channel> batch = new ArrayList<>();
-                while ((line = br.readLine()) != null) {
-                    line = line.replace("\uFEFF","").trim();
-                    if (line.isEmpty()) continue;
-                    if (line.startsWith("#EXTINF")) {
-                        int comma = line.indexOf(',');
-                        n = comma >= 0 ? line.substring(comma + 1).trim() : "Contenuto";
-                        g = attr(line, "group-title", "Senza gruppo");
-                        id = attr(line, "tvg-id", "");
-                        logo = attr(line, "tvg-logo", "");
-                    } else if (line.startsWith("#EXTGRP:")) {
-                        g = line.substring(8).trim();
-                    } else if (!line.startsWith("#") && n != null) {
-                        ContentType t = classify(n, g, line);
-                        boolean take = (t == ContentType.MOVIE && !haveMovie && movies < 15000)
-                                || (t == ContentType.SERIES && !haveSeries && series < 15000);
-                        if (take) {
-                            batch.add(new Channel(n, line, g, id, logo, t, id, ""));
-                            if (t == ContentType.MOVIE) movies++; else series++;
-                        }
-                        if (batch.size() >= 100) {
-                            List<Channel> send = new ArrayList<>(batch);
-                            batch.clear();
-                            runOnUiThread(() -> {
-                                all.addAll(send);
-                                setupGroups();
-                                filter();
-                                if (stats != null) stats.setText(all.size() + " contenuti • " + favCount() + " preferiti");
-                            });
-                        }
-                        n = null; g = "Senza gruppo"; id = ""; logo = "";
-                    }
-                    if ((haveMovie || movies >= 15000) && (haveSeries || series >= 15000)) break;
-                }
-                if (!batch.isEmpty()) {
-                    List<Channel> send = new ArrayList<>(batch);
-                    runOnUiThread(() -> {
-                        all.addAll(send);
-                        setupGroups();
-                        filter();
-                    });
-                }
-                br.close(); c.disconnect();
-                final int fm=movies, fs=series;
-                runOnUiThread(() -> {
-                    if (heroStatus != null) heroStatus.setText("Xtream • Live + Film + Serie TV caricati");
-                    if (stats != null) stats.setText(all.size() + " contenuti • " + favCount() + " preferiti");
-                    if (appPanel != null && appPanel.getVisibility() == View.VISIBLE) showHome();
-                });
-            } catch (Exception e) {
-                runOnUiThread(() -> {
-                    if (heroStatus != null) heroStatus.setText("Live caricati • Film/Serie non disponibili dal server");
-                });
+    private void loadVodCatalog(String base, String user, String pass) {
+        try {
+            JSONArray cats = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
+                    + "&password=" + enc(pass) + "&action=get_vod_categories", 15000, 45000);
+            Map<String,String> catMap = new HashMap<>();
+            for (int i=0;i<cats.length();i++) {
+                JSONObject o=cats.optJSONObject(i);
+                if(o!=null) catMap.put(o.optString("category_id",""), o.optString("category_name","Film"));
             }
-        }, "iptv-m3u-extras").start();
+
+            JSONArray vod = fetchPaged(base, "get_vod_streams", user, pass, MAX_VOD_ITEMS);
+            List<Channel> out = new ArrayList<>();
+            for(int i=0;i<vod.length() && out.size()<MAX_VOD_ITEMS;i++){
+                JSONObject o=vod.optJSONObject(i); if(o==null) continue;
+                String id=o.optString("stream_id",""); if(id.isEmpty()) continue;
+                String n=o.optString("name","Film");
+                String cat=catMap.get(o.optString("category_id",""));
+                if(cat==null||cat.isEmpty()) cat="Film";
+                String logo=o.optString("stream_icon","");
+                String ext=o.optString("container_extension","mp4"); if(ext.isEmpty()) ext="mp4";
+                out.add(new Channel(n,base+"/movie/"+enc(user)+"/"+enc(pass)+"/"+id+"."+ext,cat,id,logo,ContentType.MOVIE,id,ext));
+            }
+            addCatalogBatch(out, "FILM");
+        } catch (Exception e) {
+            runOnUiThread(() -> {
+                if (heroStatus != null) heroStatus.setText("Film: catalogo non restituito dall'API Xtream");
+            });
+        }
+    }
+
+    private void loadSeriesCatalog(String base, String user, String pass) {
+        try {
+            JSONArray cats = fetchJsonArray(base + "/player_api.php?username=" + enc(user)
+                    + "&password=" + enc(pass) + "&action=get_series_categories", 15000, 45000);
+            Map<String,String> catMap = new HashMap<>();
+            for (int i=0;i<cats.length();i++) {
+                JSONObject o=cats.optJSONObject(i);
+                if(o!=null) catMap.put(o.optString("category_id",""), o.optString("category_name","Serie TV"));
+            }
+
+            JSONArray series = fetchPaged(base, "get_series", user, pass, MAX_SERIES_ITEMS);
+            List<Channel> out = new ArrayList<>();
+            for(int i=0;i<series.length() && out.size()<MAX_SERIES_ITEMS;i++){
+                JSONObject o=series.optJSONObject(i); if(o==null) continue;
+                String id=o.optString("series_id",""); if(id.isEmpty()) continue;
+                String n=o.optString("name","Serie TV");
+                String cat=catMap.get(o.optString("category_id",""));
+                if(cat==null||cat.isEmpty()) cat="Serie TV";
+                String logo=o.optString("cover","");
+                out.add(new Channel(n,"",cat,id,logo,ContentType.SERIES,id,""));
+            }
+            addCatalogBatch(out, "SERIE TV");
+        } catch (Exception e) {
+            runOnUiThread(() -> {
+                if (heroStatus != null) heroStatus.setText("Serie TV: catalogo non restituito dall'API Xtream");
+            });
+        }
+    }
+
+    private JSONArray fetchPaged(String base, String action, String user, String pass, int maxItems) throws Exception {
+        JSONArray first = null;
+        List<JSONObject> merged = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+
+        for (int page=1; page<=40 && merged.size()<maxItems; page++) {
+            String url = base + "/player_api.php?username=" + enc(user) + "&password=" + enc(pass)
+                    + "&action=" + action + "&limit=" + VOD_PAGE_SIZE + "&page=" + page;
+            JSONArray arr;
+            try {
+                arr = fetchJsonArray(url, 15000, 60000);
+            } catch (Exception pageError) {
+                if (page == 1) throw pageError;
+                break;
+            }
+            if (first == null) first = arr;
+            if (arr.length() == 0) break;
+
+            int added = 0;
+            for (int i=0;i<arr.length() && merged.size()<maxItems;i++) {
+                JSONObject o=arr.optJSONObject(i);
+                if(o==null) continue;
+                String key;
+                if ("get_series".equals(action)) key=o.optString("series_id", o.optString("name",""));
+                else key=o.optString("stream_id", o.optString("name",""));
+                if(key.isEmpty()) key=o.toString().hashCode()+"";
+                if(seen.add(key)) {
+                    merged.add(o);
+                    added++;
+                }
+            }
+
+            // Some panels ignore limit/page and return the complete list in one response.
+            if (arr.length() < VOD_PAGE_SIZE || added == 0 || arr.length() > VOD_PAGE_SIZE) break;
+        }
+
+        if (merged.isEmpty() && first != null) return first;
+        JSONArray out = new JSONArray();
+        for (JSONObject o : merged) out.put(o);
+        return out;
+    }
+
+    private void addCatalogBatch(List<Channel> batch, String label) {
+        if (batch == null || batch.isEmpty()) return;
+        runOnUiThread(() -> {
+            all.addAll(batch);
+            setupGroups();
+            filter();
+            int live = countType(ContentType.LIVE);
+            int movies = countType(ContentType.MOVIE);
+            int series = countType(ContentType.SERIES);
+            if (stats != null) stats.setText(all.size() + " contenuti • " + favCount() + " preferiti");
+            if (heroStatus != null) heroStatus.setText("Cataloghi caricati • " + live + " Live • " + movies + " Film • " + series + " Serie TV");
+            if (appPanel != null && appPanel.getVisibility() == View.VISIBLE && homePanel != null && homePanel.getVisibility() == View.VISIBLE) {
+                showHome();
+            }
+        });
     }
 
     private PlayerResult tryXtreamLiveOnly(String base, String user, String pass) throws Exception {
@@ -975,22 +967,32 @@ public class MainActivity extends Activity {
     }
 
     private JSONArray fetchJsonArray(String url) throws Exception {
-        HttpURLConnection c=open(url, 15000, 60000);
-        int code=c.getResponseCode();
-        if(code<200||code>=300) throw new IOException("HTTP "+code);
-        String body=readLimited(c.getInputStream(), 100_000_000);
-        c.disconnect();
-        String trimmed=body.trim();
-        if (trimmed.startsWith("[")) return new JSONArray(trimmed);
-        if (trimmed.startsWith("{")) {
-            JSONObject root = new JSONObject(trimmed);
-            JSONArray data = root.optJSONArray("data");
-            if (data != null) return data;
-            JSONArray items = root.optJSONArray("items");
-            if (items != null) return items;
-            throw new IOException("risposta Xtream senza elenco contenuti");
+        return fetchJsonArray(url, 15000, 60000);
+    }
+
+    private JSONArray fetchJsonArray(String url, int connectTimeout, int readTimeout) throws Exception {
+        HttpURLConnection c=open(url, connectTimeout, readTimeout);
+        try {
+            int code=c.getResponseCode();
+            if(code<200||code>=300) throw new IOException("HTTP "+code);
+            String body=readLimited(c.getInputStream(), 100_000_000);
+            String trimmed=body.trim();
+            if (trimmed.startsWith("[")) return new JSONArray(trimmed);
+            if (trimmed.startsWith("{")) {
+                JSONObject root = new JSONObject(trimmed);
+                JSONArray data = root.optJSONArray("data");
+                if (data != null) return data;
+                JSONArray items = root.optJSONArray("items");
+                if (items != null) return items;
+                // A few Xtream panels return a single object containing the actual array under "results".
+                JSONArray results = root.optJSONArray("results");
+                if (results != null) return results;
+                throw new IOException("risposta Xtream senza elenco contenuti");
+            }
+            throw new IOException("risposta Xtream non valida");
+        } finally {
+            c.disconnect();
         }
-        throw new IOException("risposta Xtream non valida");
     }
 
     private HttpURLConnection open(String url) throws Exception {
