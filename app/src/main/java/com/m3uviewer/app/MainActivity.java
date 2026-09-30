@@ -210,7 +210,7 @@ public class MainActivity extends Activity {
         contentTitle.setText("PREFERITI");
         setTabState(tabLive, false); setTabState(tabMovies, false); setTabState(tabSeries, false); setTabState(tabAi, false);
         filtered.clear();
-        for (Channel c : all) if (isFavorite(c)) filtered.add(c);
+        for (Channel c : all) if (fav(c.url)) filtered.add(c);
         matchingCount = filtered.size();
         adapter.notifyDataSetChanged();
         if (resultCount != null) resultCount.setText(String.valueOf(matchingCount));
