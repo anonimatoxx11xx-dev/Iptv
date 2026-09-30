@@ -190,13 +190,12 @@ public class MainActivity extends Activity {
         homeTopButton.setOnClickListener(v -> showHome());
 
         findViewById(R.id.homeLive).setOnClickListener(v -> selectType(ContentType.LIVE));
-        findViewById(R.id.homeGuide).setOnClickListener(v -> selectType(ContentType.LIVE));
+        findViewById(R.id.homeGuide).setOnClickListener(v -> openGuide());
         findViewById(R.id.homeMovies).setOnClickListener(v -> selectType(ContentType.MOVIE));
         findViewById(R.id.homeSeries).setOnClickListener(v -> selectType(ContentType.SERIES));
         findViewById(R.id.homeAi).setOnClickListener(v -> selectType(ContentType.AI));
         findViewById(R.id.homeFavorites).setOnClickListener(v -> showFavorites());
-        findViewById(R.id.homeSettings).setOnClickListener(v ->
-                Toast.makeText(this, "Impostazioni disponibili a breve", Toast.LENGTH_SHORT).show());
+        findViewById(R.id.homeSettings).setOnClickListener(v -> openSettings());
 
         aiQuery.setOnEditorActionListener((v, actionId, event) -> { runAi(); return true; });
         findViewById(R.id.aiAsk).setOnClickListener(v -> runAi());
@@ -234,6 +233,37 @@ public class MainActivity extends Activity {
         matchingCount = filtered.size();
         adapter.notifyDataSetChanged();
         if (resultCount != null) resultCount.setText(String.valueOf(matchingCount));
+    }
+
+    private void openGuide() {
+        if (all.isEmpty()) {
+            Toast.makeText(this, "Collega prima l'account IPTV", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ArrayList<String> guide = new ArrayList<>();
+        int added = 0;
+        for (Channel ch : all) {
+            if (ch.type != ContentType.LIVE) continue;
+            guide.add("●  " + ch.name + "\n    " + ch.group + "  •  LIVE ADESSO");
+            if (++added >= 14) break;
+        }
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("TV GUIDE")
+                .setItems(guide.toArray(new String[0]), null)
+                .setNegativeButton("CHIUDI", null)
+                .show();
+    }
+
+    private void openSettings() {
+        String base = getPreferences(0).getString("base", "");
+        String user = getPreferences(0).getString("username", "");
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("IMPOSTAZIONI")
+                .setMessage("Connessione IPTV\\n\\nServer: " + (base.isEmpty() ? "non collegato" : base)
+                        + "\\nUtente: " + (user.isEmpty() ? "non configurato" : user)
+                        + "\\n\\nLa playlist viene caricata direttamente dal servizio Xtream.")
+                .setPositiveButton("OK", null)
+                .show();
     }
 
     private void selectType(ContentType type) {
@@ -1112,10 +1142,24 @@ public class MainActivity extends Activity {
         ArrayAdapter<String> a=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_dropdown_item,new ArrayList<>(set)){
             @Override public View getView(int p,View v,ViewGroup parent){
                 TextView t=(TextView)super.getView(p,v,parent);
-                t.setTextColor(getColor(R.color.ink)); t.setPadding(12,0,12,0); return t;
+                t.setTextColor(getColor(R.color.ink)); t.setTextSize(12); t.setPadding(12,0,8,0); return t;
+            }
+            @Override public View getDropDownView(int p,View v,ViewGroup parent){
+                TextView t=(TextView)super.getDropDownView(p,v,parent);
+                t.setTextColor(getColor(R.color.ink)); t.setTextSize(14); t.setPadding(16,12,12,12);
+                t.setBackgroundColor(getColor(R.color.surface));
+                return t;
             }
         };
-        groups.setAdapter(a); selected="Tutti"; groups.setSelection(0);
+        groups.setAdapter(a);
+        if (android.os.Build.VERSION.SDK_INT >= 21) {
+            android.graphics.drawable.GradientDrawable popup = new android.graphics.drawable.GradientDrawable();
+            popup.setColor(getColor(R.color.surface));
+            popup.setCornerRadius(dp(16));
+            popup.setStroke(dp(1), getColor(R.color.line));
+            groups.setPopupBackgroundDrawable(popup);
+        }
+        selected="Tutti"; groups.setSelection(0);
     }
 
     private void filter() {
