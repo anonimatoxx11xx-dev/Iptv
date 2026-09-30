@@ -39,6 +39,7 @@ public class MainActivity extends Activity {
     private Button connectButton;
     private TextView tabLive, tabMovies, tabSeries, tabAi, logoutButton, appAccountStatus;
     private LinearLayout aiPanel, contentPanel, homePanel;
+    private View navTabs;
     private FrameLayout contentArea;
     private EditText aiQuery;
     private TextView aiAnswer, contentTitle;
@@ -124,6 +125,7 @@ public class MainActivity extends Activity {
         tabAi = findViewById(R.id.tabAi);
         aiPanel = findViewById(R.id.aiPanel);
         homePanel = findViewById(R.id.homePanel);
+        navTabs = findViewById(R.id.navTabs);
         contentArea = findViewById(R.id.contentArea);
         contentPanel = findViewById(R.id.contentPanel);
         aiQuery = findViewById(R.id.aiQuery);
@@ -198,12 +200,14 @@ public class MainActivity extends Activity {
 
     private void showHome() {
         if (homePanel != null) homePanel.setVisibility(View.VISIBLE);
+        if (navTabs != null) navTabs.setVisibility(View.GONE);
         if (contentArea != null) contentArea.setVisibility(View.GONE);
         if (appAccountStatus != null) appAccountStatus.setText("Account collegato • " + countType(ContentType.LIVE) + " canali Live");
     }
 
     private void showFavorites() {
         if (homePanel != null) homePanel.setVisibility(View.GONE);
+        if (navTabs != null) navTabs.setVisibility(View.VISIBLE);
         if (contentArea != null) contentArea.setVisibility(View.VISIBLE);
         if (contentPanel != null) contentPanel.setVisibility(View.VISIBLE);
         if (aiPanel != null) aiPanel.setVisibility(View.GONE);
@@ -1025,6 +1029,7 @@ public class MainActivity extends Activity {
     private void showLogin() {
         if (appPanel != null) appPanel.setVisibility(View.GONE);
         if (homePanel != null) homePanel.setVisibility(View.GONE);
+        if (navTabs != null) navTabs.setVisibility(View.GONE);
         if (contentArea != null) contentArea.setVisibility(View.GONE);
         if (loginPanel != null) loginPanel.setVisibility(View.VISIBLE);
         if (heroStatus != null) heroStatus.setText("Inserisci le credenziali per entrare");
