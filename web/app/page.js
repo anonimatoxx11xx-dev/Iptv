@@ -34,19 +34,29 @@ export default function Page(){
  const [query,setQuery]=useState('');
  const [modal,setModal]=useState(null);
  const [toast,setToast]=useState('');
- const [newUser,setNewUser]=useState({name:'',username:'',credits:100,days:30});
+ const [adminCredits,setAdminCredits]=useState(10000);
+ const [createdCredentials,setCreatedCredentials]=useState(null);
+ const [newUser,setNewUser]=useState({name:'',months:1});
  const filteredUsers=useMemo(()=>users.filter(u=>(u.name+' '+u.username).toLowerCase().includes(query.toLowerCase())),[users,query]);
  const notify=(m)=>{setToast(m);setTimeout(()=>setToast(''),2200)};
+ const generateUsername=()=>{let value='usr'+Math.random().toString(36).slice(2,7)+Date.now().toString().slice(-3);return value.toLowerCase()};
+ const generatePassword=()=>{const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';let out='';for(let i=0;i<12;i++)out+=chars[Math.floor(Math.random()*chars.length)];return out};
  const createUser=()=>{
-   if(!newUser.name||!newUser.username)return;
-   const id=Date.now(), token='SC-'+Math.random().toString(16).slice(2,8).toUpperCase();
-   const exp=new Date();exp.setDate(exp.getDate()+Number(newUser.days));
+   const months=Number(newUser.months);
+   if(!newUser.name||![1,3,12].includes(months))return;
+   if(adminCredits<months){notify('Crediti amministratore insufficienti');return;}
+   const id=Date.now(), username=generateUsername(), password=generatePassword(), token='SC-'+Math.random().toString(16).slice(2,8).toUpperCase();
+   const exp=new Date();exp.setMonth(exp.getMonth()+months);
    const expires=exp.toLocaleDateString('it-IT');
-   setUsers(v=>[...v,{id,name:newUser.name,username:newUser.username,credits:Number(newUser.credits),expires,status:'Attiva',line:token}]);
-   setLines(v=>[...v,{id,user:newUser.name,username:newUser.username,token,type:'M3U Plus',expires,status:'Attiva'}]);
-   setNewUser({name:'',username:'',credits:100,days:30});setModal(null);notify('Utente e linea creati');
+   setAdminCredits(v=>v-months);
+   setUsers(v=>[...v,{id,name:newUser.name,username,password,credits:months,expires,status:'Attiva',line:token}]);
+   setLines(v=>[...v,{id,user:newUser.name,username,token,type:'M3U Plus',expires,status:'Attiva'}]);
+   setNewUser({name:'',months:1});setModal(null);setCreatedCredentials({name:newUser.name,username,password,months,expires});notify('Utente creato: credenziali generate');
  };
- const addCredits=(id,amount=100)=>{setUsers(v=>v.map(u=>u.id===id?{...u,credits:u.credits+amount}:u));notify('Crediti aggiunti')};
+ const addCredits=(id,amount=1)=>{
+   if(adminCredits<amount){notify('Crediti amministratore insufficienti');return;}
+   setAdminCredits(v=>v-amount);setUsers(v=>v.map(u=>u.id===id?{...u,credits:u.credits+amount}:u));notify('Crediti assegnati');
+ };
  const toggleUser=(id)=>{setUsers(v=>v.map(u=>u.id===id?{...u,status:u.status==='Attiva'?'Bloccata':'Attiva'}:u));notify('Stato aggiornato')};
  const renewLine=(id)=>{setLines(v=>v.map(l=>l.id===id?{...l,status:'Attiva'}:l));notify('Linea rinnovata')};
 
@@ -64,24 +74,25 @@ export default function Page(){
     <div className="topactions"><div className="search"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cerca..." /></div><button className="iconbtn">◔</button><button className="adminbtn"><span className="profileavatar sm">SA</span><b>Admin</b>⌄</button></div>
    </header>
 
-   {tab==='Dashboard'&&<Dashboard users={users} lines={lines} setTab={setTab} vpn={vpn} setVpn={setVpn}/>}
+   {tab==='Dashboard'&&<Dashboard users={users} lines={lines} setTab={setTab} vpn={vpn} setVpn={setVpn} adminCredits={adminCredits}/>}
    {tab==='Utenti'&&<UsersPage users={filteredUsers} addCredits={addCredits} toggleUser={toggleUser} onNew={()=>setModal('user')}/>}
    {tab==='Linee M3U'&&<LinesPage lines={lines} renewLine={renewLine} onNew={()=>setModal('line')}/>}
-   {tab==='Crediti'&&<CreditsPage users={users} addCredits={addCredits}/>}
+   {tab==='Crediti'&&<CreditsPage users={users} addCredits={addCredits} adminCredits={adminCredits}/>}
    {tab==='Categorie'&&<CategoriesPage/>}
    {tab==='VPN'&&<VPNPage vpn={vpn} setVpn={setVpn}/>}
    {tab==='Impostazioni'&&<SettingsPage/>}
   </section>
 
-  {modal==='user'&&<div className="modalback"><div className="modal"><div className="modalhead"><div><small>NUOVO</small><h2>Crea utente</h2></div><button onClick={()=>setModal(null)}>×</button></div><label>Nome<input value={newUser.name} onChange={e=>setNewUser({...newUser,name:e.target.value})}/></label><label>Username<input value={newUser.username} onChange={e=>setNewUser({...newUser,username:e.target.value})}/></label><div className="formgrid"><label>Crediti iniziali<input type="number" value={newUser.credits} onChange={e=>setNewUser({...newUser,credits:e.target.value})}/></label><label>Durata (giorni)<input type="number" value={newUser.days} onChange={e=>setNewUser({...newUser,days:e.target.value})}/></label></div><button className="savebtn" onClick={createUser}>Crea utente + linea</button></div></div>}
+  {modal==='user'&&<div className="modalback"><div className="modal"><div className="modalhead"><div><small>NUOVO UTENTE</small><h2>Crea utente</h2></div><button onClick={()=>setModal(null)}>×</button></div><label>Nome cliente<input autoFocus value={newUser.name} onChange={e=>setNewUser({...newUser,name:e.target.value})} placeholder="Es. Mario Rossi"/></label><label>Durata abbonamento<select value={newUser.months} onChange={e=>setNewUser({...newUser,months:Number(e.target.value)})}><option value={1}>1 credito → 1 mese</option><option value={3}>3 crediti → 3 mesi</option><option value={12}>12 crediti → 12 mesi</option></select></label><div className="creditpreview"><span>Crediti necessari</span><b>{newUser.months}</b><span>Crediti admin disponibili</span><b>{adminCredits}</b></div><div className="securitynote">Username e password vengono generati automaticamente e sono diversi per ogni nuovo utente.</div><button className="savebtn" onClick={createUser}>Crea utente + genera credenziali</button></div></div>}
   {modal==='line'&&<div className="modalback"><div className="modal"><div className="modalhead"><div><small>NUOVA LINEA</small><h2>Genera linea M3U</h2></div><button onClick={()=>setModal(null)}>×</button></div><p className="modaltext">Seleziona un utente esistente dalla gestione utenti per generare una linea autorizzata.</p><button className="savebtn" onClick={()=>{setModal(null);setTab('Utenti')}}>Vai agli utenti</button></div></div>}
+  {createdCredentials&&<div className="modalback"><div className="modal credentialmodal"><div className="modalhead"><div><small>UTENTE CREATO</small><h2>Credenziali generate</h2></div><button onClick={()=>setCreatedCredentials(null)}>×</button></div><div className="credentialbox"><div><small>UTENTE</small><b>{createdCredentials.name}</b></div><div><small>USERNAME</small><b>{createdCredentials.username}</b></div><div><small>PASSWORD</small><b className="mono">{createdCredentials.password}</b></div><div><small>ABBONAMENTO</small><b>{createdCredentials.months} {createdCredentials.months===1?'mese':'mesi'} · scade {createdCredentials.expires}</b></div></div><button className="savebtn" onClick={()=>{navigator.clipboard?.writeText('Username: '+createdCredentials.username+'\\nPassword: '+createdCredentials.password);notify('Credenziali copiate');}}>Copia credenziali</button></div></div>}
   {toast&&<div className="toast">✓ {toast}</div>}
  </main>
 }
 
-function Dashboard({users,lines,setTab,vpn,setVpn}){
+function Dashboard({users,lines,setTab,vpn,setVpn,adminCredits}){
  return <><div className="cards">
-  <Stat label="Crediti disponibili" value={users.reduce((a,u)=>a+u.credits,0).toLocaleString('it-IT')} trend="+12%" icon="◈"/>
+  <Stat label="Crediti amministratore" value={adminCredits.toLocaleString('it-IT')} trend="1 credito = 1 mese" icon="◈"/>
   <Stat label="Linee attive" value={lines.filter(l=>l.status==='Attiva').length} trend="+8" icon="⌁"/>
   <Stat label="Utenti" value={users.length} trend="+14" icon="◉"/>
   <Stat label="Scadenze 7 giorni" value="23" trend="-5" tone="down" icon="◷"/>
@@ -103,11 +114,11 @@ function Dashboard({users,lines,setTab,vpn,setVpn}){
 }
 function Stat({label,value,trend,tone,icon}){return <div className="card"><div className="cardtop"><small>{label}</small><span className="staticon">{icon}</span></div><strong>{value}</strong><em className={tone||'up'}>{trend} <span>periodo precedente</span></em></div>}
 
-function UsersPage({users,addCredits,toggleUser,onNew}){return <div className="panel full"><div className="toolbar"><div><h2>Gestione utenti</h2><p>Crea, blocca e ricarica gli account.</p></div><button className="savebtn" onClick={onNew}>＋ Nuovo utente</button></div><div className="table desktop"><div className="thead"><span>UTENTE</span><span>CREDITI</span><span>SCADENZA</span><span>LINEA</span><span>STATO</span><span>AZIONI</span></div>{users.map(u=><div className="trow" key={u.id}><div className="usercell"><div className="avatar">{u.name[0]}</div><div><b>{u.name}</b><small>{u.username}</small></div></div><b>{u.credits}</b><span>{u.expires}</span><span className="mono">{u.line}</span><span className={u.status==='Attiva'?'badge green':'badge red'}>{u.status}</span><div className="rowactions"><button onClick={()=>addCredits(u.id)}>+100</button><button onClick={()=>toggleUser(u.id)}>{u.status==='Attiva'?'Blocca':'Attiva'}</button></div></div>)}</div></div>}
+function UsersPage({users,addCredits,toggleUser,onNew}){return <div className="panel full"><div className="toolbar"><div><h2>Gestione utenti</h2><p>Crea, blocca e ricarica gli account.</p></div><button className="savebtn" onClick={onNew}>＋ Nuovo utente</button></div><div className="table desktop"><div className="thead"><span>UTENTE</span><span>CREDITI</span><span>SCADENZA</span><span>LINEA</span><span>STATO</span><span>AZIONI</span></div>{users.map(u=><div className="trow" key={u.id}><div className="usercell"><div className="avatar">{u.name[0]}</div><div><b>{u.name}</b><small>{u.username}</small><small>{u.credits} {u.credits===1?'mese':'mesi'} disponibili</small></div></div><b>{u.credits}</b><span>{u.expires}</span><span className="mono">{u.line}</span><span className={u.status==='Attiva'?'badge green':'badge red'}>{u.status}</span><div className="rowactions"><button onClick={()=>addCredits(u.id,1)}>+1 mese</button><button onClick={()=>addCredits(u.id,3)}>+3 mesi</button><button onClick={()=>addCredits(u.id,12)}>+12 mesi</button><button onClick={()=>toggleUser(u.id)}>{u.status==='Attiva'?'Blocca':'Attiva'}</button></div></div>)}</div></div>}
 
 function LinesPage({lines,renewLine,onNew}){return <div className="panel full"><div className="toolbar"><div><h2>Linee M3U</h2><p>Gestione delle linee autorizzate e delle relative scadenze.</p></div><button className="savebtn" onClick={onNew}>＋ Genera linea</button></div><div className="table desktop"><div className="thead"><span>UTENTE</span><span>TIPO</span><span>TOKEN</span><span>SCADENZA</span><span>STATO</span><span>AZIONI</span></div>{lines.map(l=><div className="trow" key={l.id}><div className="usercell"><div className="avatar">{l.user[0]}</div><div><b>{l.user}</b><small>{l.username}</small></div></div><span>{l.type}</span><span className="mono">{l.token}</span><span>{l.expires}</span><span className={l.status==='Attiva'?'badge green':'badge red'}>{l.status}</span><div className="rowactions"><button onClick={()=>renewLine(l.id)}>Rinnova</button><button onClick={()=>navigator.clipboard?.writeText(l.token)}>Copia token</button></div></div>)}</div></div>}
 
-function CreditsPage({users,addCredits}){return <div className="panel full"><div className="toolbar"><div><h2>Portafoglio crediti</h2><p>Ricarica e controlla il saldo degli utenti.</p></div><div className="credittotal"><small>Totale</small><b>{users.reduce((a,u)=>a+u.credits,0).toLocaleString('it-IT')}</b></div></div>{users.map(u=><div className="creditrow" key={u.id}><div className="usercell"><div className="avatar">{u.name[0]}</div><div><b>{u.name}</b><small>{u.username}</small></div></div><strong>{u.credits} crediti</strong><button onClick={()=>addCredits(u.id,100)}>+100</button><button onClick={()=>addCredits(u.id,500)}>+500</button></div>)}</div>}
+function CreditsPage({users,addCredits,adminCredits}){return <div className="panel full"><div className="toolbar"><div><h2>Portafoglio crediti</h2><p>Ricarica e controlla il saldo degli utenti.</p></div><div className="credittotal"><small>Crediti admin</small><b>{adminCredits.toLocaleString('it-IT')}</b></div></div>{users.map(u=><div className="creditrow" key={u.id}><div className="usercell"><div className="avatar">{u.name[0]}</div><div><b>{u.name}</b><small>{u.username}</small></div></div><strong>{u.credits} {u.credits===1?'mese':'mesi'}</strong><button onClick={()=>addCredits(u.id,1)}>+1</button><button onClick={()=>addCredits(u.id,3)}>+3</button><button onClick={()=>addCredits(u.id,12)}>+12</button></div>)}</div>}
 
 function CategoriesPage(){return <div className="panel full"><div className="toolbar"><div><h2>Categorie M3U</h2><p>Le categorie vengono organizzate in base ai contenuti della sorgente autorizzata.</p></div><button className="savebtn">＋ Nuova categoria</button></div><div className="categorygrid">{categories.map(c=><div className="category" key={c[0]}><div className="caticon">▦</div><div><b>{c[0]}</b><small>{c[2]}</small></div><strong>{c[1]}</strong></div>)}</div></div>}
 
