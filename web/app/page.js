@@ -3,7 +3,7 @@
 import {useMemo,useState} from 'react';
 
 const initialUsers=[
- {id:1,name:'Maurizio',username:'Maurizioettt',password:'BtWYQ2gmWR',credits:250,expires:'30/10/2026',status:'Attiva',line:'SC-8F2A91'},
+ {id:1,name:'Maurizio',username:'Maurizioettt',password:'',credits:250,expires:'30/10/2026',status:'Attiva',line:'SC-8F2A91'},
  {id:2,name:'Cliente 02',username:'cliente02',password:'',credits:80,expires:'14/10/2026',status:'Attiva',line:'SC-71BC20'},
  {id:3,name:'Cliente 03',username:'cliente03',password:'',credits:0,expires:'20/09/2026',status:'Bloccata',line:'SC-00DE44'},
  {id:4,name:'Demo',username:'demo01',password:'',credits:120,expires:'29/11/2026',status:'Attiva',line:'SC-5A91DD'}
@@ -38,25 +38,31 @@ export default function Page(){
  const [createdCredentials,setCreatedCredentials]=useState(null);
  const [selectedLine,setSelectedLine]=useState(null);
  const [newUser,setNewUser]=useState({name:'',months:1});
- const buildM3UUrl=(u)=>typeof window!=='undefined'&&u?.username&&u?.password ? window.location.origin+'/api/m3u?username='+encodeURIComponent(u.username)+'&password='+encodeURIComponent(u.password) : '';
+ const buildM3UUrl=(u)=>u?.m3uUrl || (u?.username&&u?.password ? 'http://netherland.warstarlive.com:6923/get.php?username='+encodeURIComponent(u.username)+'&password='+encodeURIComponent(u.password)+'&type=m3u_plus&output=hls' : '');
  const filteredUsers=useMemo(()=>users.filter(u=>(u.name+' '+u.username).toLowerCase().includes(query.toLowerCase())),[users,query]);
  const notify=(m)=>{setToast(m);setTimeout(()=>setToast(''),2200)};
  const randomChars=(chars,length)=>{const bytes=new Uint32Array(length);crypto.getRandomValues(bytes);let out='';for(let i=0;i<length;i++)out+=chars[bytes[i]%chars.length];return out};
  const generateUsername=()=>{let value;do{value='usr'+randomChars('abcdefghijkmnopqrstuvwxyz23456789',7)}while(users.some(u=>u.username===value));return value};
  const generatePassword=()=>randomChars('ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%',14);
- const createUser=()=>{
+ const createUser=async()=>{
    const months=Number(newUser.months);
-   if(!newUser.name||![1,3,12].includes(months))return;
+   const name=newUser.name.trim();
+   if(!name||![1,3,12].includes(months))return;
    if(adminCredits<months){notify('Crediti amministratore insufficienti');return;}
-   const id=Date.now(), username=generateUsername(), password=generatePassword(), token='SC-'+Math.random().toString(16).slice(2,8).toUpperCase();
-   const exp=new Date();exp.setMonth(exp.getMonth()+months);
-   const expires=exp.toLocaleDateString('it-IT');
-   setAdminCredits(v=>v-months);
-   setUsers(v=>[...v,{id,name:newUser.name,username,password,credits:months,expires,status:'Attiva',line:token}]);
-   setLines(v=>[...v,{id,user:newUser.name,username,token,type:'M3U Plus',expires,status:'Attiva'}]);
-   setNewUser({name:'',months:1});setModal(null);setCreatedCredentials({name:newUser.name,username,password,months,expires});notify('Utente creato: credenziali generate');
- };
- const addCredits=(id,amount=1)=>{
+   notify('Creazione linea sul reseller...');
+   try{
+     const response=await fetch('/api/reseller/create-user',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,months,connections:1})});
+     const data=await response.json();
+     if(!response.ok||!data.ok)throw new Error(data.error||'Purchase non riuscito');
+     const id=Date.now(), token=data.providerId?'ID-'+data.providerId:'RESELLER';
+     setAdminCredits(v=>v-months);
+     setUsers(v=>[...v,{id,name,username:data.username,password:data.password,credits:months,expires:data.expires,status:'Attiva',line:token,m3uUrl:data.m3uUrl}]);
+     setLines(v=>[...v,{id,user:name,username:data.username,password:data.password,token,type:'M3U Plus',expires:data.expires,status:'Attiva',m3uUrl:data.m3uUrl}]);
+     setNewUser({name:'',months:1});setModal(null);
+     setCreatedCredentials({name,username:data.username,password:data.password,months,expires:data.expires,m3uUrl:data.m3uUrl});
+     notify('Linea creata realmente sul reseller');
+   }catch(error){notify(error.message||'Errore nella creazione della linea');}
+ } const addCredits=(id,amount=1)=>{
    if(adminCredits<amount){notify('Crediti amministratore insufficienti');return;}
    setAdminCredits(v=>v-amount);
    setUsers(v=>v.map(u=>{
@@ -105,8 +111,8 @@ export default function Page(){
 
   {modal==='user'&&<div className="modalback"><div className="modal"><div className="modalhead"><div><small>NUOVO UTENTE</small><h2>Crea utente</h2></div><button onClick={()=>setModal(null)}>×</button></div><label>Nome cliente<input autoFocus value={newUser.name} onChange={e=>setNewUser({...newUser,name:e.target.value})} placeholder="Es. Mario Rossi"/></label><label>Durata abbonamento<select value={newUser.months} onChange={e=>setNewUser({...newUser,months:Number(e.target.value)})}><option value={1}>1 credito → 1 mese</option><option value={3}>3 crediti → 3 mesi</option><option value={12}>12 crediti → 12 mesi</option></select></label><div className="creditpreview"><span>Crediti necessari</span><b>{newUser.months}</b><span>Crediti admin disponibili</span><b>{adminCredits}</b></div><div className="securitynote">Username e password vengono generati automaticamente e sono diversi per ogni nuovo utente.</div><button className="savebtn" onClick={createUser}>Crea utente + genera credenziali</button></div></div>}
   {modal==='line'&&<div className="modalback"><div className="modal"><div className="modalhead"><div><small>NUOVA LINEA</small><h2>Genera linea M3U</h2></div><button onClick={()=>setModal(null)}>×</button></div><p className="modaltext">Seleziona un utente esistente dalla gestione utenti per generare una linea autorizzata.</p><button className="savebtn" onClick={()=>{setModal(null);setTab('Utenti')}}>Vai agli utenti</button></div></div>}
-  {selectedLine&&<div className="modalback"><div className="modal credentialmodal"><div className="modalhead"><div><small>LINEA M3U</small><h2>{selectedLine.name}</h2></div><button onClick={()=>setSelectedLine(null)}>×</button></div><div className="credentialbox"><div><small>USERNAME</small><b>{selectedLine.username}</b></div><div><small>SCADENZA LINEA</small><b>{selectedLine.expires}</b></div><div><small>URL M3U</small><b className="mono linevalue">{typeof window!=='undefined'?buildM3UUrl(selectedLine):'Generazione URL...'}</b></div></div><div className="securitynote">Questa è la URL personale della linea M3U. Il server deve essere configurato con la sorgente M3U autorizzata.</div><button className="savebtn" onClick={()=>{const url=`${window.location.origin}/api/m3u?username=${encodeURIComponent(selectedLine.username)}&token=${encodeURIComponent(selectedLine.line)}`;navigator.clipboard?.writeText(url);notify('URL M3U copiata');}}>Copia URL M3U</button></div></div>}
-  {createdCredentials&&<div className="modalback"><div className="modal credentialmodal"><div className="modalhead"><div><small>UTENTE CREATO</small><h2>Credenziali generate</h2></div><button onClick={()=>setCreatedCredentials(null)}>×</button></div><div className="credentialbox"><div><small>UTENTE</small><b>{createdCredentials.name}</b></div><div><small>USERNAME</small><b>{createdCredentials.username}</b></div><div><small>PASSWORD</small><b className="mono">{createdCredentials.password}</b></div><div><small>ABBONAMENTO</small><b>{createdCredentials.months} {createdCredentials.months===1?'mese':'mesi'} · scade {createdCredentials.expires}</b></div></div><button className="savebtn" onClick={()=>{navigator.clipboard?.writeText('Username: '+createdCredentials.username+'\\nPassword: '+createdCredentials.password);notify('Credenziali copiate');}}>Copia credenziali</button></div></div>}
+  {selectedLine&&<div className="modalback"><div className="modal credentialmodal"><div className="modalhead"><div><small>LINEA M3U</small><h2>{selectedLine.name}</h2></div><button onClick={()=>setSelectedLine(null)}>×</button></div><div className="credentialbox"><div><small>USERNAME</small><b>{selectedLine.username}</b></div><div><small>PASSWORD</small><b className="mono">{selectedLine.password||'—'}</b></div><div><small>SCADENZA LINEA</small><b>{selectedLine.expires}</b></div><div><small>URL M3U</small><b className="mono linevalue">{buildM3UUrl(selectedLine)||'Non disponibile'}</b></div></div><div className="securitynote">Questa è la URL personale della linea M3U. Il server deve essere configurato con la sorgente M3U autorizzata.</div><button className="savebtn" onClick={()=>{const url=buildM3UUrl(selectedLine);navigator.clipboard?.writeText(url);notify(url?'URL M3U copiata':'URL M3U non disponibile');}}>Copia URL M3U</button></div></div>}
+  {createdCredentials&&<div className="modalback"><div className="modal credentialmodal"><div className="modalhead"><div><small>UTENTE CREATO</small><h2>Credenziali generate</h2></div><button onClick={()=>setCreatedCredentials(null)}>×</button></div><div className="credentialbox"><div><small>UTENTE</small><b>{createdCredentials.name}</b></div><div><small>USERNAME</small><b>{createdCredentials.username}</b></div><div><small>PASSWORD</small><b className="mono">{createdCredentials.password}</b></div><div><small>ABBONAMENTO</small><b>{createdCredentials.months} {createdCredentials.months===1?'mese':'mesi'} · scade {createdCredentials.expires}</b></div><div><small>URL M3U</small><b className="mono linevalue">{createdCredentials.m3uUrl}</b></div></div><button className="savebtn" onClick={()=>{navigator.clipboard?.writeText('Username: '+createdCredentials.username+'\\nPassword: '+createdCredentials.password);notify('Credenziali copiate');}}>Copia credenziali</button></div></div>}
   {toast&&<div className="toast">✓ {toast}</div>}
  </main>
 }
